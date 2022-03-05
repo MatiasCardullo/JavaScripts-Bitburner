@@ -1,0 +1,17 @@
+disableLog('ALL')
+var server = args[0];
+var maxM = args[1];
+var minL = args[2];
+var level = getServerSecurityLevel(server);
+var count = getServerMoneyAvailable(server);
+while (count < maxM || level > minL) {
+	if (count < maxM) {
+		grow(server);
+		count = getServerMoneyAvailable(server);
+		print(count / maxM * 100 + "% grow");
+	} else if (level > minL) {
+		weaken(server);
+		level = getServerSecurityLevel(server);
+		print(minL / level * 100 + "% lowSecurity");
+	}
+}

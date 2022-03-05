@@ -46,7 +46,6 @@ export async function main(ns) {
             }
         }      
     }
-
     function sellPositions(stock) {
         var forecast = ns.stock.getForecast(stock);
         if (forecast < 0.5) {

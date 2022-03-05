@@ -1,0 +1,17 @@
+var cnt;
+var a;
+if(args[0]!=null)
+    var cnt = args[0];
+else
+    cnt=15;
+while (hacknet.numNodes() <= cnt) {
+    if (hacknet.numNodes() < cnt)
+        a = hacknet.purchaseNode();
+    if (a > 0)
+        print("Purchased hacknet Node with index " + a);
+    for (var i = 0; i < hacknet.numNodes(); i++) {
+        while (hacknet.upgradeLevel(i, 1)) { }
+        while (hacknet.upgradeRam(i, 2)) { }
+        while (hacknet.upgradeCore(i, 1)) { }
+    };
+};

@@ -22,7 +22,7 @@ export async function main(ns) {
 			auxS = parseFloat(minS / level * 100).toFixed(2);
 		} else {
 			while (money / maxM > 2 / 3) {
-				numHack = await ns.hack(server, { threads: Math.floor(threads/2) });
+				numHack = await ns.hack(server, { threads: Math.floor(threads/4) });
 				money = ns.getServerMoneyAvailable(server);
 				await ns.write(server + "_log.txt", numHack + "-" + new Date().getTime()+" ", "a")
 			}
