@@ -26,7 +26,7 @@ export async function main(ns) {
 		{ price: 250, name: 'SQLInject.exe', level: minPorts[5] }
 	];
 	var facServers = ["CSEC", "avmnite-02h", "I.I.I.I", "run4theh111z", "The-Cave", "w0r1d_d43m0n"];
-	ns.exec("displayServers_lite.js", "home", 1, serversWithMoney.toString());
+	ns.exec("displayServersLite.js", "home", 1, serversWithMoney.toString());
 	//ns.exec("killAll.js", "home");
 	await ns.sleep(100)
 	
@@ -34,23 +34,23 @@ export async function main(ns) {
 		//try to buy tor if there is money and ram avaible
 		if (singularity) {
 			if (!tor && ns.getServerMoneyAvailable("home") >= 200000) {
-				ns.exec("singularity/buyTor.js", "home");
+				ns.exec("/singularity/buyTor.js", "home");
 				while (!ns.fileExists("tor.txt")) { await ns.sleep(0) }
 				tor = true;
 			}
 			if (ns.read("coreCost.txt") < ns.getServerMoneyAvailable("home")) {
-				ns.exec("singularity/upgradeHomeCores.js", "home");
+				ns.exec("/singularity/upgradeHomeCores.js", "home");
 				//while (!ns.scriptRunning("singularity/upgradeHomeCores.js", "home")) { await ns.sleep(0) }
-				ns.exec("singularity/upgradeHomeCoresCost.js", "home");
+				ns.exec("/singularity/upgradeHomeCoresCost.js", "home");
 			}
 			if (ns.read("coreCost.txt") < ns.getServerMoneyAvailable("home")) {
-				ns.exec("singularity/upgradeHomeRAM.js", "home");
+				ns.exec("/singularity/upgradeHomeRAM.js", "home");
 				//while (!ns.scriptRunning("singularity/upgradeHomeRAM.js", "home")) { await ns.sleep(0) }
-				ns.exec("singularity/upgradeHomeRAMCost.js", "home");
+				ns.exec("/singularity/upgradeHomeRAMCost.js", "home");
 			}
-			ns.exec("singularity/joinFactions.js", "home");
+			ns.exec("/singularity/joinFactions.js", "home");
 			//while (!ns.scriptRunning("singularity/joinFactions.js", "home")) { await ns.sleep(0) }
-			ns.exec("singularity/augments.js", "home");
+			ns.exec("/singularity/augments.js", "home");
 		}
 		await rootServers(allServers);
 		await maxOutServers(serversWithMoney, serversWithRam);
@@ -234,16 +234,16 @@ export async function main(ns) {
 	}
 
 	async function backdoor(server) {
-		if (singularity) {
+		if (singularity&&ns.getScriptRam("/singularity/backdoor.js")<=ns.getServerMaxRam("home")-ns.getServerUsedRam("home")) {
 			let path = scanNode("home", server, [])
 			for (let i = 0; i < path.length; i++) {
-				ns.exec("singularity/connect.js", "home", 1, path[i])
+				ns.exec("/singularity/connect.js", "home", 1, path[i])
 				await ns.sleep(1);
 			}
-			ns.exec("singularity/backdoor.js", "home")
+			ns.exec("/singularity/backdoor.js", "home")
 			ns.toast(`Installing backdoor ${server}`)
 			await ns.sleep(5000);
-			ns.exec("singularity/connect.js", "home", 1, "home")
+			ns.exec("/singularity/connect.js", "home", 1, "home")
 			return true;
 		} else {
 			if (inputcommands(`run connect.js ${server}`)) {

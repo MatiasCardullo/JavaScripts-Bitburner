@@ -1,46 +1,77 @@
+export var primesLogOriginal = [];
 export var primesLog = [];
 
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL')
-	//ns.tail()
-	if (ns.fileExists("primes.txt")) {
-		let aux = ns.read("primes.txt")
+	
+	if (ns.fileExists("primes-b36.txt")) {
+		let aux = ns.read("primes-b36.txt")
 		if (aux.includes(',')) {
-			primesLog = aux.split(',').map(Number)
+			aux=aux.split(',');
+			for (let i = 0; i < aux.length; i++) {
+				let num=parseInt(aux[i],36)
+				primesLog.push(num)
+				primesLogOriginal.push(num)
+			}
 		}
 	}
-	let number; let operation;
-	if (ns.args[0] == null || typeof (ns.args[0]) == "number") {
-		if (ns.args[0] == null)
-			number = parseInt(Math.random() * 100000);
-		else
-			number = ns.args[0];
-		let output = await divisible(ns, number, true);
-		ns.alert("Divisibles: " + output[0])
-		ns.alert(`Primes between 1 and ${number}: ${output[1]}`)
-		ns.write("primes.txt", primesLog, 'w');
-	} else if (ns.args[0] == "ulam") {
-		if( ns.args[1]==null){
-			for (let i = 0; i < 1000; i++) {
-				await ulam(ns, 130,i)
-				await ns.sleep(100)
+	let number = 0; let operation;
+	switch (typeof (ns.args[0])) {
+		case 'number':
+			number = parseFloat(ns.args[0]);
+			let output = await divisible(ns, number, true);
+			ns.alert("Divisibles: " + output[0])
+			ns.alert(`Primes between 1 and ${number}: ${output[1]}`)
+			ns.alert("Happy Number: " + isHappy(ns, number))
+			break;
+		case 'string':
+			switch (ns.args[0]) {
+				case "ulam":
+					if (ns.args[1] == null)
+						for (let i = 0; i < 1000; i++) {
+							await ulam(ns, 130, i)
+							await ns.sleep(200)
+						}
+					else
+						await ulam(ns, ns.args[1], ns.args[2])
+					break;
+				case "prime":
+					ns.tprint(await isPrime(ns, ns.args[1]))
+					break;
+				case "happy":
+					ns.tprint(isHappy(ns.args[1]))
+					break;
+				case "factorial":
+					ns.tprint(factorial(ns.args[1]))
+					break;
+				case "factorion":
+					ns.tprint(isFactorion(ns.args[1]))
+					break;
+				case "leyland":
+					ns.tprint(isLeyland(ns.args[1]))
+					break;
+				case "leyland2":
+					ns.tprint(isLeyland(ns.args[1],true))
+					break;
+				case "resolve":
+					operation = ns.args[1];
+					ns.tprint(operation)
+					operation = resolve(ns, operation);
+					ns.tprint(operation);
+					break;
+				default:
+					ns.tprint(ns.args[0]+'?')
+					break;
 			}
-		}else
-			await ulam(ns, ns.args[1],ns.args[2])
-	} else {
-		operation = ns.args[0];
-		ns.tprint(operation)
-		operation = resolve(ns, operation);
-		ns.tprint(operation);
+			break;
 	}
-	//number = parseInt(number)
-
-	/*let arrays = await divisible(ns, number, true)
-	let divs = arrays[0];
-	let primes = arrays[1];
-	ns.tprint("divisibles " + divs)
-	ns.tprint("primes " + primes)*/
+	if (primesLog.length != primesLogOriginal.length){
+		for (let i = 0; i < primesLog.length; i++) {
+			primesLog[i]=primesLog[i].toString(36)
+		}
+		ns.write("primes-b36.txt", primesLog, 'w');
+	}
 }
 
 /** @param {NS} ns **/
@@ -127,26 +158,26 @@ export async function divisible(ns, number, checkPrimes = false) {
 	let string = "";
 	//ns.alert("imprimiendo en aproximadamente " + parseFloat(number / 2 / 10000000 / 4.2).toFixed(2) + " segundos")
 	let aux = 0;
-	ns.print(aux + "%");
-	for (let i = 1; i < number; i++) {
+	for (let i = 1; i <= number; i++) {
 		if (i % 100000 == 0) {
 			await ns.sleep(0)
+		}
+		string = `${aux}% - ${outputPrim.length} primes and ${outputDivs.length} divisibles`
+		if (number % i == 0 && i != number) {
+			outputDivs.push(i)
+		}
+		if (checkPrimes) {
+			aux = parseFloat(i / number * 100).toFixed(2)
+			if (await isPrime(ns, i))
+				outputPrim.push(i)
+		} else {
+			aux = parseFloat(i / (number / 2 + 1) * 100).toFixed(2)
+			if (i > number / 2)
+				break;
 		}
 		if (string != `${aux}% - ${outputPrim.length} primes and ${outputDivs.length} divisibles`) {
 			ns.clearLog()
 			ns.print(string);
-		}
-		aux = parseFloat(i / (number / 2 + 1) * 100).toFixed(2)
-		string = `${aux}% - ${outputPrim.length} primes and ${outputDivs.length} divisibles`
-		if (number % i == 0) {
-			outputDivs.push(i)
-		}
-		if (checkPrimes) {
-			if (await isPrime(ns, i))
-				outputPrim.push(i)
-		} else {
-			if (i > number / 2)
-				break;
 		}
 	}
 	if (number > 1) {
@@ -159,29 +190,29 @@ export async function divisible(ns, number, checkPrimes = false) {
 }
 
 /** @param {NS} ns **/
-export async function isPrime(ns, number) {
+export async function isPrime(ns, input) {
 	let skip = false;
 	let maxPrime; let start = 3;
 	let leng = primesLog.length;
 	if (leng > 0) {
 		//ns.tprint(primesLog)
 		maxPrime = primesLog[leng - 1]
-		if (maxPrime >= number)
-			skip = primesLog.includes(number)
+		if (maxPrime >= input)
+			skip = primesLog.includes(input)
 	}
 	if (skip)
 		return true;
-	if (number % 2 == 0)
+	if (input % 2 == 0 || input % 5 == 0)
 		return false;
-	let fin = Math.sqrt(number)
-	for (let i = start; i < fin; i += 2) {
-		if (i % 100000 == 0)
-			await ns.sleep(0)
-		if (number % i == 0)
+	let fin = Math.sqrt(input)
+	for (let i = start; i < fin && i % 5 != 0; i += 2) {
+		if (input % i == 0)
 			return false;
+		if (i % 100001 == 0)
+			await ns.sleep(0)
 	}
-	if (number > 1) {
-		primesLog.push(number)
+	if (input > 1) {
+		primesLog.push(input)
 		return true;
 	}
 	else
@@ -189,11 +220,12 @@ export async function isPrime(ns, number) {
 }
 
 /** @param {NS} ns **/
-export async function ulam(ns, size, start = 0) {
+export async function ulam(ns, size, start = 0, func = isPrime) {
+	//https://en.wikipedia.org/wiki/Ulam_spiral
 	let block = '█▌';
 	let space = '  ';
 	let output = "";
-	var steps = 1+start;
+	var steps = 1 + start;
 	let flip = 1;
 	var itineration = 1;
 	ns.clearLog()
@@ -205,31 +237,92 @@ export async function ulam(ns, size, start = 0) {
 	for (let y = 0; y < matrix.length; y++) {
 		matrix[y] = new Array(size).fill(0)
 	}
-	matrix[y][x] = await isPrime(ns,steps)?block:space;
-	while (steps-start < size * size) {
+	matrix[y][x] = await func(ns, steps) ? block : space;
+	while (steps - start < size * size) {
 		for (let h = 0; h < itineration; h++) {
 			steps++;
-			if (steps-start > size * size)
+			if (steps - start > size * size)
 				break;
 			x += flip;
-			matrix[y][x] =await isPrime(ns,steps)?block:space;
+			matrix[y][x] = await func(ns, steps) ? block : space;
 			//ns.print(x+" "+y+" "+await isPrime(ns,steps));
 		}
 		flip = (-flip);
 		for (let h = 0; h < itineration; h++) {
 			steps++;
-			if (steps-start > size * size)
+			if (steps - start > size * size)
 				break;
 			y += flip;
-			matrix[y][x] =await isPrime(ns,steps)?block:space;
+			matrix[y][x] = await func(ns, steps) ? block : space;
 			//ns.print(x+" "+y+" "+await isPrime(ns,steps));
 		}
 		itineration++;
 	}
-	ns.print("");
 	for (let y = 0; y < matrix.length; y++) {
-		for (let x = 0; x < matrix[y].length; x++) 
-			output+=matrix[y][x]
-		ns.tprint(output);output=""
+		output += "\n";
+		for (let x = 0; x < matrix[y].length; x++)
+			output += matrix[y][x]
+	}
+	ns.tprint(output)
+}
+
+/** @param {NS} ns **/
+export function isHappy(input) {
+	//https://en.wikipedia.org/wiki/Happy_number
+	let nums = [];
+	let number = 0;
+	let string = input.toString()
+	nums.push(input)
+	while (true) {
+		for (let h = 0; h < string.length; h++) {
+			number += Math.pow(parseInt(string[h]), 2)
+			//ns.print(string[h] + "^2")
+		}
+		//ns.print(number)
+		if (number === 1) {
+			return true;
+		} else {
+			if (nums.includes(number))
+				return false;
+			nums.push(number)
+			string = number.toString()
+			number = 0
+		}
+		//await ns.sleep(0)
+	}
+}
+
+export function factorial(input) {
+	let number=null
+	if(input>=0){
+		number = 1;
+		for (let i = parseInt(input); i > 0; i--) {
+			number *= i;
+		}
+	}
+	return number
+}
+
+export function isFactorion(input) {
+	let number=0;
+	let string = input.toString();
+	for (let i = 0; i < string.length; i++) {
+		number +=factorial(string[i]);
+	}
+	return number==parseInt(input)
+}
+
+export function isLeyland(input,second=false){
+	if(input>=0){
+		for (let y = 2; y < input; y++) {
+			for (let x = y; x < input; x++) {
+				if(!second&&Math.pow(x,y)+Math.pow(y,x)==input){
+					return true;
+				}else if(second&&Math.pow(x,y)-Math.pow(y,x)==input){
+					return true;
+				}
+			}
+		}
+		return false
 	}
 }

@@ -10,26 +10,14 @@ export async function main(ns) {
 	ns.clearLog();
 	let block = '█▌';
 	let space = '  ';
-	let output = "";
-
-	let size = 3;
-	let x = 1; let y = 1;
-	let matrix = new Array(size)
-	for (let h = 0; h < matrix.length; h++) {
-		matrix[h]=new Array(size).fill(0)
-	}
-
-	for (let h = 0; h < matrix.length; h++) {
-		for (let i = 0; i < matrix[h].length; i++) {
-			if(h==y&&i==x)
-				matrix[y][x]=1
-			ns.print(matrix[h][i]);
-		}
-	}
-	ns.print(x + " " + y + " " + matrix[y]);
-	for (let y = 0; y < matrix.length; y++) {
-		ns.print(matrix[y]);
-	}
+	//let output = "√";
+	//let output = "✓";
+	let output = 46784654165;
+	ns.tprint(output);
+	let b36=output.toString(36)
+	ns.tprint(b36);
+	let aux=parseInt(b36,36)
+	ns.tprint(aux)
 	ns.exit()
 
 	for (let h = 0; h < 20; h++) {
@@ -43,7 +31,6 @@ export async function main(ns) {
 	}
 	ns.exit()
 	let emojis = [8986, 8987, 9193, 9194, 9195, 9196, 9200, 9203, 9875, 9725, 9726, 9748, 9749, 9757, 9800, 9801, 9802, 9803, 9804, 9805, 9806, 9807, 9808, 9809, 9810, 9811, 9855, 9875, 9889, 9898, 9899, 9917, 9918, 9924, 9925, 9934, 9940, 9962, 9970, 9971, 9973, 9977, 9978, 9981, 9989, 9994, 9995, 9996, 9997];
-
 	await ns.write("test.txt", output, "w")
 	for (let i = 0; i < 400000; i++) {
 		if (i % 80 == 0) {
