@@ -5,13 +5,10 @@ export const horizontal = '─' // U+2500
 export const vertical = '│' // U+2502
 export const upLeft = '┌'//U+250C
 export const upRight = '┐'//U+2510
-export const up = [upLeft, upRight];
 export const downLeft = '└'//U+2514
 export const downRight = '┘'//U+2518
-export const down = [downLeft, downRight];
 export const verticalLeft = '├'
 export const verticalRight = '┤'
-export const centerCorner = [verticalLeft, verticalRight];
 export const horizontalDown = '┴'
 export const horizontalUp = '┬'
 export const center = '┼'
@@ -20,7 +17,8 @@ export async function main(ns) {
 	ns.tprint(box(null, null, "this,is a,box",','))
 	ns.tprint(box(31, 4))
 	ns.tprint(table([[1, 2, 3], [4, 5, 6], [7, 8, 9]], true))
-	let aux = ns.read("SERVERDATA.txt").split('\n')
+	
+	let aux = ns.read("/singularity/augments/augsPrice.txt").split('\n')
 	aux.pop();
 	let matrix = [];
 	aux.forEach((l) => matrix.push(l.split(',')))
@@ -45,7 +43,7 @@ export function box(h, v, text = null, split = null) {
 		}
 
 	}
-	line += lineHorizontal(up, h)
+	line += lineHorizontal([upLeft, upRight], h)
 
 	for (let i = 0; i < v; i++) {
 		line += vertical;
@@ -61,7 +59,7 @@ export function box(h, v, text = null, split = null) {
 		//output.push(line);
 	}
 
-	line += lineHorizontal(down, h)
+	line += lineHorizontal([downLeft, downRight], h)
 
 	return line;
 }
@@ -90,7 +88,7 @@ export function table(matrix, horizontalSeparator = null) {
 			all = true;
 			break;
 	}
-	line += lineHorizontal(up, lenghtPerColumn, horizontalUp)
+	line += lineHorizontal([upLeft, upRight], lenghtPerColumn, horizontalUp)
 	for (let i = 0; i < rows; i++) {
 		line += vertical;
 		let start = 0;
@@ -105,10 +103,10 @@ export function table(matrix, horizontalSeparator = null) {
 		//ns.tprint(line)
 		line += "\n"
 		if ((first == i || all || last == i) && i < rows - 1)
-			line += lineHorizontal(centerCorner, lenghtPerColumn, center)
+			line += lineHorizontal([verticalLeft, verticalRight], lenghtPerColumn, center)
 	}
 
-	line += lineHorizontal(down, lenghtPerColumn, horizontalDown)
+	line += lineHorizontal([downLeft, downRight], lenghtPerColumn, horizontalDown)
 
 	return line;
 }

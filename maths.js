@@ -4,13 +4,13 @@ export var primesLog = [];
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL')
-	
+
 	if (ns.fileExists("primes-b36.txt")) {
 		let aux = ns.read("primes-b36.txt")
 		if (aux.includes(',')) {
-			aux=aux.split(',');
+			aux = aux.split(',');
 			for (let i = 0; i < aux.length; i++) {
-				let num=parseInt(aux[i],36)
+				let num = parseInt(aux[i], 36)
 				primesLog.push(num)
 				primesLogOriginal.push(num)
 			}
@@ -30,11 +30,11 @@ export async function main(ns) {
 				case "ulam":
 					if (ns.args[1] == null)
 						for (let i = 0; i < 1000; i++) {
-							await ulam(ns, 130, i)
+							ns.tprint(await ulam(ns, 130, i))
 							await ns.sleep(200)
 						}
 					else
-						await ulam(ns, ns.args[1], ns.args[2])
+						ns.tprint(await ulam(ns, ns.args[1], ns.args[2]))
 					break;
 				case "prime":
 					ns.tprint(await isPrime(ns, ns.args[1]))
@@ -52,7 +52,7 @@ export async function main(ns) {
 					ns.tprint(isLeyland(ns.args[1]))
 					break;
 				case "leyland2":
-					ns.tprint(isLeyland(ns.args[1],true))
+					ns.tprint(isLeyland(ns.args[1], true))
 					break;
 				case "resolve":
 					operation = ns.args[1];
@@ -61,14 +61,14 @@ export async function main(ns) {
 					ns.tprint(operation);
 					break;
 				default:
-					ns.tprint(ns.args[0]+'?')
+					ns.tprint(ns.args[0] + '?')
 					break;
 			}
 			break;
 	}
-	if (primesLog.length != primesLogOriginal.length){
+	if (primesLog.length != primesLogOriginal.length) {
 		for (let i = 0; i < primesLog.length; i++) {
-			primesLog[i]=primesLog[i].toString(36)
+			primesLog[i] = primesLog[i].toString(36)
 		}
 		ns.write("primes-b36.txt", primesLog, 'w');
 	}
@@ -91,7 +91,7 @@ export function resolve(ns, string = "") {
 	let array = string.split("");
 	//ns.tprint(array);
 	for (let i = start; i < array.length; i++) {
-		ns.print(array[i])
+		//ns.print(array[i])
 		if (startParentheses !== -1) {
 			if (array[i] == ')') {
 				string = string.slice(0, startParentheses) + ' ' + resolve2(ns, string.slice(startParentheses + 1, i)) + ' ' + string.slice(i + 1, string.length);
@@ -122,31 +122,49 @@ export function resolve(ns, string = "") {
 /** @param {NS} ns **/
 export function resolve2(ns, string = "") {
 	let array = string.split("");
-	let pow = string.lastIndexOf('^')
+	let negative = false
+	//let symbols = ['^', '√', '*', '/']
+	let pow = array.indexOf('^')
 	let output;
-	ns.tprint(string)
+	//ns.tprint(array)
 	if (pow !== -1) {
 		let first = 0; let last = array.length - 1;
 		for (let i = pow + 1; i < array.length; i++) {
 			if (isNaN(array[i])) {
-				last = i - 1
+				if (array[i] == '-' && pow + 1 == i) {
+					//negative = true;
+					continue;
+				}
+				last = i
+				break;
 			}
+			//ns.tprint('i'+array[i])
 		}
+		ns.tprint(string.slice(pow + 1, last))
+		let exp = parseInt(string.slice(pow + 1, last));
+		/*if (negative){
+			exp = 0 - exp
+			negative = false;
+		}*/
 		for (let i = pow - 1; i > 0; i--) {
 			if (isNaN(array[i])) {
 				first = i + 1
+				if(array[i]=='-'){
+					first--;
+					negative=true;
+				}
+				break;
 			}
+			//ns.tprint('i'+array[i])
 		}
-		ns.tprint(array[first])
-		ns.tprint(array[last])
-		let base = string.slice(first, pow - 1);
-		let exp = string.slice(pow + 1, last);
-		ns.tprint(base)
+		ns.tprint(string.slice(first, pow))
+		let base = parseInt(string.slice(first, pow));
 		ns.tprint(exp)
+		ns.tprint(base)
 		output = Math.pow(base, exp);
 		if (output < 0)
 			output = '(' + output + ')'
-		return string.slice(0, first - 1) + output + string.slice(last + 1)
+		return string.slice(0, first) + output + string.slice(last)
 	}
 	return string;
 }
@@ -208,7 +226,7 @@ export async function isPrime(ns, input) {
 	for (let i = start; i < fin && i % 5 != 0; i += 2) {
 		if (input % i == 0)
 			return false;
-		if (i % 100001 == 0)
+		if (i % 10001 == 0)
 			await ns.sleep(0)
 	}
 	if (input > 1) {
@@ -228,7 +246,6 @@ export async function ulam(ns, size, start = 0, func = isPrime) {
 	var steps = 1 + start;
 	let flip = 1;
 	var itineration = 1;
-	ns.clearLog()
 	if (size % 2 == 0)
 		size++;
 	let x = Math.floor(size / 2); let y = Math.floor(size / 2);
@@ -263,7 +280,7 @@ export async function ulam(ns, size, start = 0, func = isPrime) {
 		for (let x = 0; x < matrix[y].length; x++)
 			output += matrix[y][x]
 	}
-	ns.tprint(output)
+	return output;
 }
 
 /** @param {NS} ns **/
@@ -276,9 +293,7 @@ export function isHappy(input) {
 	while (true) {
 		for (let h = 0; h < string.length; h++) {
 			number += Math.pow(parseInt(string[h]), 2)
-			//ns.print(string[h] + "^2")
 		}
-		//ns.print(number)
 		if (number === 1) {
 			return true;
 		} else {
@@ -288,13 +303,12 @@ export function isHappy(input) {
 			string = number.toString()
 			number = 0
 		}
-		//await ns.sleep(0)
 	}
 }
 
 export function factorial(input) {
-	let number=null
-	if(input>=0){
+	let number = null
+	if (input >= 0) {
 		number = 1;
 		for (let i = parseInt(input); i > 0; i--) {
 			number *= i;
@@ -304,21 +318,21 @@ export function factorial(input) {
 }
 
 export function isFactorion(input) {
-	let number=0;
+	let number = 0;
 	let string = input.toString();
 	for (let i = 0; i < string.length; i++) {
-		number +=factorial(string[i]);
+		number += factorial(string[i]);
 	}
-	return number==parseInt(input)
+	return number == parseInt(input)
 }
 
-export function isLeyland(input,second=false){
-	if(input>=0){
+export function isLeyland(input, second = false) {
+	if (input >= 0) {
 		for (let y = 2; y < input; y++) {
 			for (let x = y; x < input; x++) {
-				if(!second&&Math.pow(x,y)+Math.pow(y,x)==input){
+				if (!second && Math.pow(x, y) + Math.pow(y, x) == input) {
 					return true;
-				}else if(second&&Math.pow(x,y)-Math.pow(y,x)==input){
+				} else if (second && Math.pow(x, y) - Math.pow(y, x) == input) {
 					return true;
 				}
 			}

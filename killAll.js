@@ -12,7 +12,7 @@ export async function main(ns) {
 				}
 			}
 		}
-		for (let i = servers.length-1; i>-1; i--) {
+		for (let i = 1; i < servers.length; i++) {
 			ns.killall(servers[i])
 		}
 	}else{

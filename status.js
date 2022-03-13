@@ -4,12 +4,9 @@ export async function main(ns) {
 	var servers = ["home"];
 	for (let i = 0; i < servers.length; i++) {
 		var thisScan = ns.scan(servers[i]);
-		// Loop through results of the scan, and add any new servers
 		for (let j = 0; j < thisScan.length; j++) {
-			// If this server isn't in servers, add it
 			if (servers.indexOf(thisScan[j]) === -1) {
 				servers.push(thisScan[j]);
-				//ns.tprint(thisScan[j]+", "+ns.getServerMaxMoney(thisScan[j])+", "+ns.getServerMaxRam(thisScan[j]))
 				let aux=ns.ls(thisScan[j],".cct")
 				let line;
 				if(aux.length>0){
@@ -19,15 +16,6 @@ export async function main(ns) {
 					ns.tprint(line);
 				}
 			}
-			/*for (let i = 0; i < servers.length; i++) {
-				for (let j = 0; j < servers.length-1; j++){
-					if(ns.getServerRequiredHackingLevel(servers[j])> ns.getServerRequiredHackingLevel(servers[j+1])){
-						let swapElement = servers[j+1];
-						servers[j+1] = servers[j];
-						servers[j] = swapElement;
-					}
-				}
-			}*/
 		}
 	}
 	servers.splice(0, 1);

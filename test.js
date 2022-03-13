@@ -12,13 +12,23 @@ export async function main(ns) {
 	let space = '  ';
 	//let output = "√";
 	//let output = "✓";
+	let terminalInput = ''
+	eval('terminalInput = document.getElementById("terminal-input")')
+	/*if (!terminalInput)
+		return false;*/
+	ns.tprint(terminalInput)
+	/*terminalInput.value = input;
+	const handler = Object.keys(terminalInput)[1];
+	terminalInput[handler].onChange({ target: terminalInput });
+	terminalInput[handler].onKeyDown({ keyCode: 13, preventDefault: () => null });*/
+	ns.exit()
+
 	let output = 46784654165;
 	ns.tprint(output);
 	let b36=output.toString(36)
 	ns.tprint(b36);
 	let aux=parseInt(b36,36)
 	ns.tprint(aux)
-	ns.exit()
 
 	for (let h = 0; h < 20; h++) {
 		for (let i = 0; i < 20; i++) {

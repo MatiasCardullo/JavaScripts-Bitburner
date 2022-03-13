@@ -4,58 +4,88 @@ import { _chargeSound } from "./sounds/chargeSound.js"
 /** @param {NS} ns **/
 export async function main(ns) {
 	//ns.tail()
-	let player=ns.getPlayer()
-	let count = 4
-	let rep = [];
-	let crime = [];
-	let hak = [];
+	let player = ns.getPlayer()
+	var pathFaction; var pathAugment;
+	let count = 3
+	let rep = []; let crime = []; let hak = []; let other = [];
 	let augments;
 	let focus = true;
-	var ownAugments = ns.getOwnedAugmentations(true)
-	if (ns.getOwnedAugmentations().includes("Neuroreceptor Management Implant"))
+
+	ns.run("/singularity/getMyAugments.js")
+	await ns.sleep(50)
+	let installed = ns.read("/singularity/player/installedAugments.txt").split(',')
+	let purchased = ns.read("/singularity/player/purchasedAugments.txt").split(',')
+	var ownAugments = installed.concat(purchased)
+
+	if (installed.includes("Neuroreceptor Management Implant"))
 		focus = false
-	
+
 	let factions = player.factions
 	for (let h = 0; h < factions.length; h++) {
-		augments = ns.getAugmentationsFromFaction(factions[h]);
+		pathFaction = "/singularity/factions/" + factions[h].replaceAll(' ', '').replace('&', 'And') + "Augments.txt"
+		if (!ns.fileExists(pathFaction)) {
+			ns.run("/singularity/factionsAugments.js", 1, factions[h])
+			await ns.sleep(50);
+		}
+		augments = ns.read(pathFaction).split(',')
 		for (let i = 0; i < augments.length; i++) {
+			pathAugment = "/singularity/augments/" + augments[i].replaceAll(' ', '').replace("'", '').replace("(S.N.A)","")+ ".txt";
+			if (!ns.fileExists(pathAugment)) {
+				ns.run("/singularity/augmentationStats.js", 1, augments[i])
+				await ns.sleep(50);
+			}
 			if (!ownAugments.includes(augments[i]) && augments[i] !== "NeuroFlux Governor") {
-				let data = ns.getAugmentationStats(augments[i]);
-				if (augments[i] == "The Red Pill" || augments[i] == "Neuroreceptor Management Implant") {
-					await buyLoop([[factions[h], augments[i]]]);
+				if (augments[i] == "The Red Pill" || augments[i] == "Neuroreceptor Management Implant" || augments[i] == "CashRoot Starter Kit" || augments[i] == "BitRunners Neurolink") {
+					await buyLoop([[factions[h], augments[i]]]); ns.exit();
 				}
+				let data = ns.read(pathAugment).split(',');
 				//ns.tprint(data)
-				for (var key in data) {
-					if (key.includes("rep")) {
+				for (let j = 0; j < data.length; j++) {
+					//ns.tprint(data[j])
+					if (data[j].includes("rep")) {
 						rep.push([factions[h], augments[i]])
-					} else if (key.includes("crime")) {
+					} else if (data[j].includes("crime")) {
 						crime.push([factions[h], augments[i]])
-					} else if (key.includes("hack")) {
+					} else if (data[j].includes("weak") || data[j].includes("grow") || data[j].includes("hack")) {
 						hak.push([factions[h], augments[i]])
 					} else {
-						//other.push([factions[h],augments[i]])
+						other.push([factions[h], augments[i]])
 					}
 				}
 			}
 		}
 	}
-
-	if (rep.length> 0) {
-		await buyLoop(rep);
-	}else if (hak.length> 0) {
-		await buyLoop(hak);
-	}else if (crime.length> 0) {
-		await buyLoop(crime);
+	//ns.tprint(rep.length+crime.length+hak.length)
+	await buyLoop(rep);
+	await buyLoop(hak);
+	await buyLoop(crime);
+	if (other.length > 0&&crime.length == 0&&hak.length == 0&&rep.length == 0) {
+		await buyLoop(other);
+	} else if(other.length == 0){
+		ns.run("/singularity/gym.js");
 	}
-
-	let augs = ownAugments.length - ns.getOwnedAugmentations(false).length
-	if (augs >= count) {
+	let install = 0;
+	for (let i = 0; i < purchased.length; i++) {
+		pathAugment = "/singularity/augments/" + purchased[i].replaceAll(' ', '').replace("'", '').replace("(S.N.A)","")+ ".txt";
+		let data = ns.read(pathAugment).split(',');
+		for (let j = 0; j < data.length; j++) {
+			if (data[j].includes("rep") || data[j].includes("crime") || data[j].includes("weak") || data[j].includes("grow") || data[j].includes("hack")) {
+				install++;
+				if (install >= count)
+					break;
+			}
+		}
+		if (install >= count)
+			break;
+	}
+	if (install >= count) {
 		ns.kill("all.js", "home", true)
 		if (ns.kill("stockTest.js", "home"))
-			ns.exec("sellAll.js", "home")
+			ns.run("sellAll.js")
 
 		for (let h = 0; h < factions.length; h++) {
-			augments = ns.getAugmentationsFromFaction(factions[h]);
+			pathFaction = "/singularity/factions/" + factions[h].replaceAll(' ', '').replace('&', 'And') + "Augments.txt"
+			augments = ns.read(pathFaction).split(',')
 			for (let i = 0; i < augments.length; i++) {
 				ns.purchaseAugmentation(factions[h], augments[i])
 			}
@@ -65,12 +95,12 @@ export async function main(ns) {
 			while (ns.purchaseAugmentation(factions[h], "NeuroFlux Governor")) { }
 
 		ns.stopAction()
-		await ns.sleep(5000)
 		new Audio("data:audio/wav;base64," + _chargeSound).play()
+		await ns.sleep(5000)
 		ns.installAugmentations("autoStart.js")
 	}
 
-	async function buyLoop(array) {
+	async function buyLoop(array, stopWork = true) {
 		for (let i = 0; i < array.length; i++) {
 			if (ns.getAugmentationPrice(array[i][1]) < player.money && array[i][1] !== "The Red Pill") {
 				ns.kill("/singularity/crime.js", "home", true)
@@ -84,10 +114,11 @@ export async function main(ns) {
 				}
 				if (!player.isWorking) {
 					workFaction(array[i][0]);
-				}else if (player.workType == "Working for Faction"){
-					if(player.currentWorkFactionName == array[i][0]	&& ns.getFactionRep(array[i][0]) + player.workRepGained >= ns.getAugmentationRepReq(array[i][1]))
+				} else if (player.workType == "Working for Faction") {
+					if (player.currentWorkFactionName == array[i][0] && ns.getFactionRep(array[i][0]) + player.workRepGained >= ns.getAugmentationRepReq(array[i][1]))
 						ns.stopAction()
-					if(player.currentWorkFactionName !== array[i][0] && ns.getFactionRep(array[i][0]) >ns.getFactionRep(player.currentWorkFactionName)+player.workRepGained){
+					if (stopWork && player.currentWorkFactionName !== array[i][0] &&
+						ns.getFactionRep(array[i][0]) > ns.getFactionRep(player.currentWorkFactionName) + player.workRepGained) {
 						ns.stopAction();
 						workFaction(array[i][0]);
 					}
@@ -99,7 +130,7 @@ export async function main(ns) {
 		}
 	}
 
-	function workFaction(faction){
+	function workFaction(faction) {
 		if (!ns.workForFaction(faction, "Security Work", focus)) {
 			if (!ns.workForFaction(faction, "Field Work", focus)) {
 				ns.workForFaction(faction, "Hacking Contracts", focus)

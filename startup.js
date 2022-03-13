@@ -5,8 +5,8 @@ import { _coplandOsEnterprise } from "./sounds/coplandOsEnterprise.js"
 export async function main(ns) {
 	let singularity=ns.args[0]
 	let getGang=ns.args[1]
-	ns.exec("/singularity/upgradeHomeCoresCost.js","home")
-	ns.exec("/singularity/upgradeHomeRAMCost.js","home")
+	ns.run("/singularity/upgradeHomeCoresCost.js")
+	ns.run("/singularity/upgradeHomeRAMCost.js")
 	let audio=[
 		new Audio("data:audio/wav;base64,"+_beep),
 		new Audio("data:audio/wav;base64,"+_coplandOsEnterprise),
@@ -28,15 +28,13 @@ export async function main(ns) {
 		if(getGang==null)
 			getGang=await ns.prompt("Do you want to form a gang?")
 	if(ns.getServerMaxRam("home")<=32){
-		ns.exec("allLite.js","home",1,singularity)
+		ns.run("allLite.js",1,singularity)
 	}else{
-		ns.exec("all.js","home",1,singularity)
+		ns.run("all.js",1,singularity)
 	}
 	if(singularity){
-		ns.exec("autoContract.js","home")
-		ns.exec("/singularity/crime.js","home",1,getGang)
+		ns.run("/singularity/crime.js",1,getGang)
 	}else{
-		ns.exec("autoContract.js","home",1,true)
-		ns.exec("hacknet.js","home")	
+		ns.run("hacknet.js")	
 	}
 }

@@ -6,8 +6,7 @@ export async function main(ns) {
 		let fileLog = ns.read("mail.txt").split(',')
 		if (files.length != fileLog.length) {
 			youGotmail.play()
-			ns.toast("You got mail", "success", 180000)
-			files.forEach((e) => fileLog.includes(e) ? null : ns.toast(e, "success", 60000))
+			files.forEach((e) => fileLog.includes(e) ? null : ns.toast("You got mail! "+e, "success", 180000))
 			ns.write("mail.txt", files, 'w')
 		}
 	} else {
