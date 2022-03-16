@@ -95,9 +95,9 @@ export async function main(ns) {
         if (outputResult != "NO SOLVER YET")
             outputResult = ns.codingcontract.attempt(outputData, listFiles[z], serverCct);
         let aux = serverCct + ", " + listFiles[z] + ", " + inputType + ", " + outputData + ", " + outputResult;
-        ns.write("autoContract_log.txt",aux,'a');
+        await ns.write("autoContract_log.txt",aux,'a');
         if (!outputResult)
-            ns.write("autoContract_log.txt","Failed data for debug: " + JSON.stringify(inputData),'a');
+            await ns.write("autoContract_log.txt","Failed data for debug: " + JSON.stringify(inputData),'a');
         new Audio("data:audio/wav;base64," + _beep).play()
     }
 }

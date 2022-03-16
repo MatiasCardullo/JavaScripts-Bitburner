@@ -1,4 +1,5 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-	ns.purchaseProgram(ns.args[0])
+	if(ns.purchaseProgram(ns.args[0]))
+		ns.tprint(ns.args[0])
 }

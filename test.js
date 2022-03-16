@@ -3,6 +3,7 @@ import { _win95StartUp } from "./sounds/win95StartUp.js"
 import { mp3ToBase64 } from "mp3ToBase64.js"
 import { mediafire } from "mediafire.js"
 import { youtubeMP3 } from "youtube.js"
+import * as asciichart from 'asciichart.js';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -12,15 +13,8 @@ export async function main(ns) {
 	let space = '  ';
 	//let output = "√";
 	//let output = "✓";
-	let terminalInput = ''
-	eval('terminalInput = document.getElementById("terminal-input")')
-	/*if (!terminalInput)
-		return false;*/
-	ns.tprint(terminalInput)
-	/*terminalInput.value = input;
-	const handler = Object.keys(terminalInput)[1];
-	terminalInput[handler].onChange({ target: terminalInput });
-	terminalInput[handler].onKeyDown({ keyCode: 13, preventDefault: () => null });*/
+	ns.tail()
+	ns.print(asciichart.plot([35465,35465,53413514,3456,364516341,354153,4163513,651635]))
 	ns.exit()
 
 	let output = 46784654165;

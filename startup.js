@@ -21,7 +21,7 @@ export async function main(ns) {
 	let oldLogs=ns.ls("home","_log.txt")
 	for (let i = 0; i < oldLogs.length; i++)
 		await ns.write(oldLogs[i],"","w")
-	
+	ns.run("reset.js")
 	if(singularity==null)
 		singularity=await ns.prompt("You have the singularity?")
 	if(singularity)
@@ -30,11 +30,9 @@ export async function main(ns) {
 	if(ns.getServerMaxRam("home")<=32){
 		ns.run("allLite.js",1,singularity)
 	}else{
-		ns.run("all.js",1,singularity)
+		ns.run("all.js",1,singularity,getGang)
 	}
-	if(singularity){
-		ns.run("/singularity/crime.js",1,getGang)
-	}else{
+	if(!singularity){
 		ns.run("hacknet.js")	
 	}
 }

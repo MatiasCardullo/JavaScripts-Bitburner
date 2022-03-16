@@ -1,10 +1,12 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-	let zones = ["Chongqing", "Sector-12", "Aevum", "New Tokyo", "Ishima", "Volhaven"]
+	let zones = ["Chongqing","New Tokyo", "Ishima", "Sector-12", "Aevum", "Volhaven"]
 	let invites = ns.checkFactionInvitations()
 	let ownAugments = ns.getOwnedAugmentations()
 	let pathFactionAugments;let augments;
-	
+	let aux;
+	let skip=false;
+	let join = false;
 	for (let h = 0; h < zones.length; h++) {
 		pathFactionAugments="/singularity/factions/"+zones[h].replaceAll(' ','')+"Augments.txt"
 		if(!ns.fileExists(pathFactionAugments)){

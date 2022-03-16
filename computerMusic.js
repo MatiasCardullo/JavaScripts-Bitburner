@@ -2,10 +2,11 @@
 export async function main(ns) {
 	ns.disableLog('sleep')
 	ns.clearLog()
-	//ns.tail()
+	ns.tail()
 	if (!ns.fileExists("Music.txt") || ns.args[0] != null) {
 		await ns.wget(formatPathFile(ns.args[0]), "Music.txt")
 	}
+	var visual = true;
 	let path = ""; let name = "";
 	let file = ns.read("Music.txt")
 	file = file.split('\r\n')
@@ -19,9 +20,9 @@ export async function main(ns) {
 		}
 	}
 	listMusic = shuffle(listMusic)
-	//ns.write()
 	let played = [];
-	//ns.exit()
+	var context = new AudioContext();
+
 	while (true) {
 		let song; let nextSong = new Audio(listMusic[0][0])
 		await ns.sleep(5000)//need wait to charge the music
@@ -30,7 +31,14 @@ export async function main(ns) {
 			if (index < listMusic.length)
 				nextSong = new Audio(listMusic[index][0])
 			song.play()
-			ns.toast("Next " + listMusic[index][1], "info", 60000)
+			var audioSource = context.createMediaElementSource(song);
+			var analyser = context.createAnalyser();
+			audioSource.connect(analyser);
+			analyser.connect(context.destination);
+			analyser.fftSize = 128;
+			var bufferLength = analyser.frequencyBinCount;
+			var dataArray = new Uint8Array(bufferLength);
+			//ns.toast("Next " + listMusic[index][1], "info", 60000)
 			ns.toast("Playing " + listMusic[index - 1][1], "info", 60000)
 			let min = Math.floor(song.duration / 60)
 			let seg = Math.floor(song.duration - 60 * min)
@@ -38,7 +46,7 @@ export async function main(ns) {
 				seg = "0" + seg
 			let duration = " " + min + ":" + seg + " "
 			min = 0; seg = -1; var output;
-			for (let i = 0; i < song.duration; i++) {
+			while (!song.ended) {
 				ns.clearLog();
 				for (let j = 0; j < played.length; j++) {
 					ns.print(" " + played[j])
@@ -48,14 +56,13 @@ export async function main(ns) {
 				if (seg < 10)
 					seg = "0" + seg
 				ns.print(">" + listMusic[index - 1][1])
-				//ns.print(" "+min+":"+seg+" "+songName+" "+duration)
 				output = " " + min + ":" + seg + " "
 				for (let j = output.length; j <= 100 - duration.length; j++) {
 					output += "_";
 				}
 				output += duration + " "
 				ns.print(output); output = " ";
-				var perc = parseFloat((i / song.duration) * 100)
+				var perc = parseFloat((song.currentTime / song.duration) * 100)
 				var aux = perc;
 				for (let j = 1; j < 100; j++) {
 					if (aux >= 1) {
@@ -65,12 +72,30 @@ export async function main(ns) {
 					}
 				}
 				ns.print(output)
+
 				if (index < listMusic.length)
 					ns.print(" Next: " + listMusic[index][1])
-				await ns.sleep(1000)
+				ns.print("")
+				visualizer()
+				await ns.sleep(0)
 			}
 			played.push(listMusic[index - 1][1]);
 		}
+	}
+
+	function visualizer() {
+		let output = "";
+		let mult = 0.2;
+		analyser.getByteFrequencyData(dataArray);
+		for (var i = 0; i < bufferLength; i++) {
+			output = "";
+			for (var j = 0; j < dataArray[i] * mult; j++) {
+				output += '█';
+			}
+			mult += 0.01;
+			ns.print(output);
+		}
+
 	}
 }
 

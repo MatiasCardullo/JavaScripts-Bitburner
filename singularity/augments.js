@@ -21,6 +21,10 @@ export async function main(ns) {
 		focus = false
 
 	let factions = player.factions
+	let maxAugRep=[];
+	for (let h = 0; h < factions.length; h++) {
+		maxAugRep.push([factions[h],0])
+	}
 	for (let h = 0; h < factions.length; h++) {
 		pathFaction = "/singularity/factions/" + factions[h].replaceAll(' ', '').replace('&', 'And') + "Augments.txt"
 		if (!ns.fileExists(pathFaction)) {
@@ -36,7 +40,7 @@ export async function main(ns) {
 			}
 			if (!ownAugments.includes(augments[i]) && augments[i] !== "NeuroFlux Governor") {
 				if (augments[i] == "The Red Pill" || augments[i] == "Neuroreceptor Management Implant" || augments[i] == "CashRoot Starter Kit" || augments[i] == "BitRunners Neurolink") {
-					await buyLoop([[factions[h], augments[i]]]); ns.exit();
+					await buyLoop([[factions[h], augments[i]]]); continue;
 				}
 				let data = ns.read(pathAugment).split(',');
 				//ns.tprint(data)
@@ -56,13 +60,13 @@ export async function main(ns) {
 		}
 	}
 	//ns.tprint(rep.length+crime.length+hak.length)
-	await buyLoop(rep);
-	await buyLoop(hak);
-	await buyLoop(crime);
+	await buyLoop(rep,!focus);
+	await buyLoop(hak,!focus);
+	await buyLoop(crime,!focus);
 	if (other.length > 0&&crime.length == 0&&hak.length == 0&&rep.length == 0) {
 		await buyLoop(other);
 	} else if(other.length == 0){
-		ns.run("/singularity/gym.js");
+		//ns.run("/singularity/gym.js");
 	}
 	let install = 0;
 	for (let i = 0; i < purchased.length; i++) {
@@ -71,8 +75,7 @@ export async function main(ns) {
 		for (let j = 0; j < data.length; j++) {
 			if (data[j].includes("rep") || data[j].includes("crime") || data[j].includes("weak") || data[j].includes("grow") || data[j].includes("hack")) {
 				install++;
-				if (install >= count)
-					break;
+				break;
 			}
 		}
 		if (install >= count)

@@ -91,7 +91,7 @@ export async function main(ns) {
 		}
 		if (totalIncome > 0) {
 			output = ""
-			for (let j = 0; j < maxNameLength + 113; j++) {
+			for (let j = 0; j < maxNameLength + 115; j++) {
 				output += " ";
 			}
 			output += "Total Income: " + ns.nFormat(totalIncome, '0.000 a') //formatNumber(totalIncome);
