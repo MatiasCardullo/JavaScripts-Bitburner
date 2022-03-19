@@ -92,6 +92,12 @@ export async function main(ns) {
 							setInput("")
 						}
 						break;
+					case "stop":
+						song.pause()
+						song.currentTime = 0;
+						pause = true;
+						setInput("")
+						break;
 				}
 				if (next || back) {
 					song.pause()

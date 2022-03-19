@@ -11,7 +11,7 @@ export async function main(ns) {
 	let serversWithRam = servers[2];
 	var singularity = ns.args[0];
 	var getGang = ns.args[1]
-	var b = false, f = false, r = false, h = false, s = false; var tor = false;
+	var b = false, f = false, r = false, h = false, s = false;
 	let minPorts = [0, 5000, 5000, 5000, 5000, 5000];
 	for (let i = 0; i < allServers.length; i++) {
 		let port = ns.getServerNumPortsRequired(allServers[i]);
