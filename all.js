@@ -2,7 +2,6 @@
 export async function main(ns) {
 	ns.disableLog('ALL')
 	ns.enableLog('exec')
-	ns.enableLog('sleep')
 	let servers = scanServers();
 	let allServers = servers[0];
 	let serversWithMoney = servers[1];
@@ -10,9 +9,9 @@ export async function main(ns) {
 	var serverMaxOut = [];
 	let serversWithRam = servers[2];
 	var singularity = ns.args[0]
-	var getGang = ns.args[0]
+	var getGang = ns.args[1]
 	var homeRAM;
-	var b = false, f = false, r = false, h = false, s = false; var tor = false;
+	var b = false, f = false, r = false, h = false, s = false;
 	let minPorts = [0, 5000, 5000, 5000, 5000, 5000];
 	for (let i = 0; i < allServers.length; i++) {
 		let port = ns.getServerNumPortsRequired(allServers[i]);
@@ -21,7 +20,7 @@ export async function main(ns) {
 			minPorts[port] = hacklevel;
 	}
 	var prices = [
-		{ price: 0.5, name: 'BruteSSH.exe', level: minPorts[1] },
+		{ price: 0.6, name: 'BruteSSH.exe', level: minPorts[1] },
 		{ price: 1.5, name: 'FTPCrack.exe', level: minPorts[2] },
 		{ price: 5, name: 'relaySMTP.exe', level: minPorts[3] },
 		{ price: 30, name: 'HTTPWorm.exe', level: minPorts[4] },
@@ -64,31 +63,27 @@ export async function main(ns) {
 	];
 	var facServers = ["CSEC", "avmnite-02h", "I.I.I.I", "run4theh111z", "The-Cave", "w0r1d_d43m0n"];
 	ns.exec("displayServers.js", "home", 1, serversWithMoney.toString());
-	let iteration = 0;
+	ns.tail()
 	let ramServer;
-	let output;
 	while (true) {
 		//try to buy tor and upgrade home kernels and ram if we have the singularity and there is enough money
-		
+
 		ns.exec("autoContract.js", "home")
 		while (ns.scriptRunning("autoContract.js", "home")) { await ns.sleep(0) }
 		let myServers = ns.getPurchasedServers()
 		homeRAM = ns.getServerMaxRam("home")
 		if (homeRAM > 512) {
-			ramServer = 512*2
+			ramServer = 512 * 2
 		} else {
-			ramServer=homeRAM*2;
+			ramServer = homeRAM * 2;
 		}
 		if (myServers.length < 25) {
 			ns.exec("buyServer.js", "home", 1, serversWithMoneyWithoutRam.toString(), ramServer);
 		}
-		ns.print(myServers.length+"/25")
+		ns.print(myServers.length + "/25")
 		if (singularity) {
-			if (!tor && ns.getServerMoneyAvailable("home") >= 200000) {
-				if(ns.exec("/singularity/buyTor.js", "home")!=0){
-					while (!ns.fileExists("/singularity/player/tor.txt")) { await ns.sleep(0) }
-					tor = true;
-				}
+			if (!b && ns.getServerMoneyAvailable("home") >= 260000) {
+				ns.exec("/singularity/buyTor.js", "home")
 			}
 			if (ns.read("/singularity/coreCost.txt") < ns.getServerMoneyAvailable("home")) {
 				ns.exec("/singularity/upgradeHomeCores.js", "home");
@@ -104,8 +99,17 @@ export async function main(ns) {
 			while (ns.scriptRunning("/singularity/joinFactions.js", "home")) { await ns.sleep(0) }
 			ns.exec("/singularity/augments.js", "home");
 			while (ns.scriptRunning("/singularity/augments.js", "home")) { await ns.sleep(0) }
-			if (!ns.scriptRunning("/singularity/crime.js", "home")&&myServers.length < 25)
-				ns.exec("/singularity/crime.js", "home",1,getGang,false);
+			if (myServers.length < 25) {
+				if (!ns.scriptRunning("/singularity/crime.js", "home"))
+					ns.exec("/singularity/crime.js", "home", 1, getGang, false);
+			} else {
+				ns.exec("/singularity/company.js", "home", 1);
+				while (ns.scriptRunning("/singularity/company.js", "home")) { await ns.sleep(0) }
+			}
+			if (true) {
+				ns.exec("/singularity/gang.js","home",1)
+				while (ns.scriptRunning("/singularity/gang.js", "home")) { await ns.sleep(0) }
+			}
 		}
 		if (ns.getServerMoneyAvailable("home") > 1000000000000 && !ns.scriptRunning("stockTest.js", "home")) {
 			ns.exec("stockTest.js", "home")
@@ -224,7 +228,7 @@ export async function main(ns) {
 				let percM = parseInt(money / maxM * 100);
 				let percL = parseInt(minL / security * 100);
 				if (!ns.scriptRunning(script2, "home")) {
-					await hackServer(script2, "home", server, maxM, minL, 85);
+					await hackServer(script2, "home", server, maxM, minL);
 				}
 				if (ram > 0) {
 					if (!ns.scriptRunning(script, server)) {
@@ -254,22 +258,25 @@ export async function main(ns) {
 
 				} else {
 					if (ns.serverExists(server + "_hack")) {
-						if (percM < 90 || percL < 90) {
-							for (let j = 0; j < serversWithRam.length; j++) {
-								if (!ns.scriptRunning(script, serversWithRam[j])) {
-									if (await hackServer(script2, serversWithRam[j], server, maxM, minL, 99.9999))
-										break;
+						if (!ns.scriptRunning(script, server + "_hack")) {
+							if (percM < 90 || percL < 90) {
+								for (let j = 0; j < serversWithRam.length; j++) {
+									if (!ns.scriptRunning(script, serversWithRam[j])) {
+										if (await hackServer(script2, serversWithRam[j], server, maxM, minL, 99.9999))
+											break;
+									}
 								}
-							}
-							for (let j = 0; j < myServers.length; j++) {
-								if (!ns.scriptRunning(script, myServers[j])) {
-									if (await hackServer(script2, myServers[j], server, maxM, minL, 99.9999))
-										break;
+								for (let j = 0; j < myServers.length; j++) {
+									if (!ns.scriptRunning(script, myServers[j])) {
+										if (await hackServer(script2, myServers[j], server, maxM, minL, 99.9999))
+											break;
+									}
 								}
+							} else {
+								ns.killall(server + "_hack")
+								await hackServer(script, server + "_hack", server, maxM, minL, 99.9999);
 							}
-						} else if (!ns.scriptRunning(script, server + "_hack")) {
-							ns.killall(server + "_hack")
-							await hackServer(script, server + "_hack", server, maxM, minL, 99.9999);
+						} else {
 							serverMaxOut.push(server);
 						}
 					}
@@ -284,7 +291,7 @@ export async function main(ns) {
 		if (perc != null)
 			ram = (maxRam / 100) * perc;
 		else
-			ram = maxRam - ns.getServerUsedRam(server) - 1;
+			ram = maxRam - 48;
 		if (ns.hasRootAccess(server) && ns.hasRootAccess(hackServer) && ram < maxRam - ns.getServerUsedRam(server)) {
 			let thread = ram / ns.getScriptRam(script);
 			await ns.scp(script, server)
@@ -331,16 +338,11 @@ export async function main(ns) {
 
 	async function backdoor(server) {
 		if (singularity && ns.getScriptRam("/singularity/backdoor.js") <= homeRAM - ns.getServerUsedRam("home")) {
-			let path = scanNode("home", server, [])
-			ns.exec("/singularity/connect.js", "home", 1, path[0])
-			await ns.sleep(100);
-			for (let i = 1; i < path.length; i++) {
-				ns.exec("/singularity/connect.js", "home", 1, path[i])
-				await ns.sleep(100);
-			}
+			ns.exec("/singularity/connect.js", "home", 1, server)
+			while (ns.scriptRunning("/singularity/connect.js", "home")) { await ns.sleep(0) }
 			ns.exec("/singularity/backdoor.js", "home")
 			ns.toast(`Installing backdoor ${server}`)
-			await ns.sleep(5000);
+			while (ns.scriptRunning("/singularity/backdoor.js", "home")) { await ns.sleep(0) }
 			ns.exec("/singularity/connect.js", "home", 1, "home")
 			return true;
 		} else {
@@ -366,19 +368,5 @@ export async function main(ns) {
 		terminalInput[handler].onChange({ target: terminalInput });
 		terminalInput[handler].onKeyDown({ keyCode: 13, preventDefault: () => null });
 		return true;
-	}
-
-	function scanNode(node, target, scanedServers) {
-		let servers = ns.scan(node).filter((server) => !scanedServers.includes(server));
-		scanedServers.push(...servers);
-
-		if (servers.includes(target)) return [target];
-
-		for (let server of servers) {
-			const path = scanNode(server, target, scanedServers);
-			if (path) return [server, ...path]
-		}
-
-		return '';
 	}
 }

@@ -6,7 +6,7 @@ export async function main(ns) {
 	if (!ns.fileExists("Music.txt") || ns.args[0] != null) {
 		await ns.wget(formatPathFile(ns.args[0]), "Music.txt")
 	}
-	var visual = true;
+	let visual;
 	let path = ""; let name = "";
 	let file = ns.read("Music.txt")
 	file = file.split('\r\n')
@@ -20,83 +20,180 @@ export async function main(ns) {
 		}
 	}
 	listMusic = shuffle(listMusic)
-	let played = [];
-	var context = new AudioContext();
-
+	let context = new AudioContext();
 	while (true) {
-		let song; let nextSong = new Audio(listMusic[0][0])
-		await ns.sleep(5000)//need wait to charge the music
+		let wait; let song; let lastSong; let next; let back; let pause; let input; let min; let seg; let duration;
+		let nextSong = new Audio(listMusic[0][0])
 		for (let index = 1; index <= listMusic.length; index++) {
-			song = nextSong;
+			wait = 0;next = false; pause = false;
+			if (back) {
+				song = lastSong;
+				index -= 2;
+				back = false;
+			} else {
+				song = nextSong;
+			}
+			if (index >1)
+				lastSong = new Audio(listMusic[index - 2][0])
+			else
+				lastSong = null;
 			if (index < listMusic.length)
 				nextSong = new Audio(listMusic[index][0])
+			else
+				nextSong = null;
 			song.play()
-			var audioSource = context.createMediaElementSource(song);
-			var analyser = context.createAnalyser();
+			let audioSource = context.createMediaElementSource(song);
+			let analyser = context.createAnalyser();
 			audioSource.connect(analyser);
 			analyser.connect(context.destination);
-			analyser.fftSize = 128;
-			var bufferLength = analyser.frequencyBinCount;
-			var dataArray = new Uint8Array(bufferLength);
-			//ns.toast("Next " + listMusic[index][1], "info", 60000)
-			ns.toast("Playing " + listMusic[index - 1][1], "info", 60000)
-			let min = Math.floor(song.duration / 60)
-			let seg = Math.floor(song.duration - 60 * min)
-			if (seg < 10)
-				seg = "0" + seg
-			let duration = " " + min + ":" + seg + " "
-			min = 0; seg = -1; var output;
-			while (!song.ended) {
-				ns.clearLog();
-				for (let j = 0; j < played.length; j++) {
-					ns.print(" " + played[j])
-				}
-				min = Math.floor(song.currentTime / 60)
-				seg = Math.floor(song.currentTime - 60 * min)
+			analyser.fftSize = 256;
+			let bufferLength = analyser.frequencyBinCount - 40;
+			let dataArray = new Uint8Array(bufferLength);
+			do {
+				min = Math.floor(song.duration / 60)
+				seg = Math.floor(song.duration - 60 * min)
 				if (seg < 10)
 					seg = "0" + seg
-				ns.print(">" + listMusic[index - 1][1])
-				output = " " + min + ":" + seg + " "
-				for (let j = output.length; j <= 100 - duration.length; j++) {
-					output += "_";
-				}
-				output += duration + " "
-				ns.print(output); output = " ";
-				var perc = parseFloat((song.currentTime / song.duration) * 100)
-				var aux = perc;
-				for (let j = 1; j < 100; j++) {
-					if (aux >= 1) {
-						output += "█"; aux--;
-					} else {
-						output += "-";
-					}
-				}
-				ns.print(output)
-
-				if (index < listMusic.length)
-					ns.print(" Next: " + listMusic[index][1])
-				ns.print("")
-				visualizer()
+				duration = " " + min + ":" + seg
 				await ns.sleep(0)
+				if (wait < 1) {
+					wait++;
+					ns.print("      Loading...")
+				}
+			} while (duration == " NaN:NaN")
+			min = 0; seg = -1; let output;
+			visual = [[], 0];
+			ns.toast("Playing " + listMusic[index - 1][1], "info", 10000)
+			while (!song.ended) {
+				switch (getInput().toString().toLowerCase()) {
+					case "next":
+						if (nextSong != null) {
+							next = true;
+							setInput("")
+						}
+						break;
+					case "back":
+						if (lastSong != null) {
+							back = true;
+							setInput("")
+						}
+						break;
+					case "pause":
+						if (!pause) {
+							song.pause()
+							pause = true;
+							setInput("")
+						}
+						break;
+					case "play":
+						if (pause) {
+							song.play()
+							pause = false;
+							setInput("")
+						}
+						break;
+				}
+				if (next || back) {
+					song.pause()
+					song.currentTime = 0;
+					break;
+				}
+				wait++;
+				if (!song.paused) {
+					min = Math.floor(song.currentTime / 60)
+					seg = Math.floor(song.currentTime - 60 * min)
+					if (seg < 10)
+						seg = "0" + seg
+					output = " " + min + ":" + seg + " "
+					for (let j = output.length; j < bufferLength - duration.length; j++) {
+						output += "_";
+					}
+					output += duration + " │ "
+					if (index - 2 > -1) {
+						output += listMusic[index - 2][1]
+					}
+					output += "\n "
+					var perc = parseFloat((song.currentTime / song.duration) * bufferLength)
+					var aux = perc;
+					for (let j = 1; j < bufferLength; j++) {
+						if (aux >= 1) {
+							output += "█"; aux--;
+						} else if (aux >= 0.5) {
+							output += "▌"; aux--;
+						} else {
+							output += "-";
+						}
+					}
+					output += " │> " + listMusic[index - 1][1]
+					visual = visualizer(analyser, bufferLength, dataArray, visual[1])
+					for (let j = 0; j < visual[0].length; j++) {
+						output += "\n "
+						output += visual[0][j] + "│ "
+						if (j + index < listMusic.length)
+							output += listMusic[index + j][1]
+					}
+					ns.clearLog()
+					ns.print(output)
+				}
+				if (wait > 3000) {
+					await ns.sleep(0)
+					wait = 0;
+				}
 			}
-			played.push(listMusic[index - 1][1]);
 		}
 	}
 
-	function visualizer() {
-		let output = "";
+	function visualizer(analyser, bufferLength, dataArray, max = 0) {
+		let block = '█'; let semi = '▄'; let space = ' ';
+		let output = []; let line;
+		let maxHeight = 30;
 		let mult = 0.2;
+		let newDataArray = [];
+		let aux; let barHeight;
 		analyser.getByteFrequencyData(dataArray);
 		for (var i = 0; i < bufferLength; i++) {
-			output = "";
-			for (var j = 0; j < dataArray[i] * mult; j++) {
-				output += '█';
+			aux = dataArray[i] * mult;
+			mult += 0.002 * i / 10;
+			newDataArray.push(aux)
+			if (max < aux) {
+				max = aux
 			}
-			mult += 0.01;
-			ns.print(output);
 		}
-
+		for (var i = maxHeight; i > -1; i--) {
+			line = "";
+			for (var j = 0; j < bufferLength; j++) {
+				barHeight = newDataArray[j] / max * maxHeight;
+				if (barHeight > i)
+					line += block;
+				else if (barHeight + 0.5 > i)
+					line += semi;
+				else
+					line += space;
+			}
+			output.push(line);
+		}
+		return [output, max];
 	}
+}
+
+export function getInput() {
+	let terminalInput = ''
+	eval('terminalInput = document.getElementById("terminal-input")')
+	if (!terminalInput)
+		return false;
+	return terminalInput.value;
+}
+
+export function setInput(input) {
+	let terminalInput = ''
+	eval('terminalInput = document.getElementById("terminal-input")')
+	if (!terminalInput)
+		return false;
+	terminalInput.value = input;
+	const handler = Object.keys(terminalInput)[1];
+	terminalInput[handler].onChange({ target: terminalInput });
+	terminalInput[handler].onKeyDown({ keyCode: 13, preventDefault: () => null });
+	return true;
 }
 
 export function shuffle(array) {

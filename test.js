@@ -3,7 +3,6 @@ import { _win95StartUp } from "./sounds/win95StartUp.js"
 import { mp3ToBase64 } from "mp3ToBase64.js"
 import { mediafire } from "mediafire.js"
 import { youtubeMP3 } from "youtube.js"
-import * as asciichart from 'asciichart.js';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -13,15 +12,22 @@ export async function main(ns) {
 	let space = '  ';
 	//let output = "√";
 	//let output = "✓";
+	let aux;
 	ns.tail()
-	ns.print(asciichart.plot([35465,35465,53413514,3456,364516341,354153,4163513,651635]))
-	ns.exit()
+	while(true){
+		aux=getInput()
+		ns.print(aux)
+		if(aux=="exit"){
+			ns.exit()
+		}
+		await ns.sleep(100)
+	}
 
 	let output = 46784654165;
 	ns.tprint(output);
 	let b36=output.toString(36)
 	ns.tprint(b36);
-	let aux=parseInt(b36,36)
+	aux=parseInt(b36,36)
 	ns.tprint(aux)
 
 	for (let h = 0; h < 20; h++) {
@@ -78,4 +84,15 @@ export async function main(ns) {
 		audio[i].play();
 		await ns.sleep(audio[i].duration * 1000)
 	}*/
+	function getInput() {
+		let terminalInput = ''
+		eval('terminalInput = document.getElementById("terminal-input")')
+		if (!terminalInput)
+			return false;
+		return terminalInput.value;
+		const handler = Object.keys(terminalInput)[1];
+		terminalInput[handler].onChange({ target: terminalInput });
+		terminalInput[handler].onKeyDown({ keyCode: 13, preventDefault: () => null });
+		return true;
+	}
 }

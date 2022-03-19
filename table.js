@@ -14,15 +14,15 @@ export const horizontalUp = '┬'
 export const center = '┼'
 
 export async function main(ns) {
-	ns.tprint(box(null, null, "this,is a,box",','))
-	ns.tprint(box(31, 4))
-	ns.tprint(table([[1, 2, 3], [4, 5, 6], [7, 8, 9]], true))
+	ns.print(box(null, null, "this,is a,box",','))
+	ns.print(box(31, 4))
+	ns.print(table([[1, 2, 3], [4, 5, 6], [7, 8, 9]], true))
 	
 	let aux = ns.read("/singularity/augments/augsPrice.txt").split('\n')
 	aux.pop();
 	let matrix = [];
 	aux.forEach((l) => matrix.push(l.split(',')))
-	ns.tprint(table(matrix,"first"))
+	ns.print(table(matrix,"first"))
 }
 
 export function box(h, v, text = null, split = null) {

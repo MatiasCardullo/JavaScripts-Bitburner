@@ -1,9 +1,8 @@
-import { _win95StartUp } from "./sounds/win95StartUp.js"
-
+import { _chargeSound } from "./sounds/chargeSound.js"
 /** @param {NS} ns **/
 export async function main(ns) {
 
-  var audio = new Audio("data:audio/wav;base64," + _win95StartUp);
+  var audio = new Audio("data:audio/wav;base64," + _chargeSound);
   var context = new AudioContext();
   var src = context.createMediaElementSource(audio);
   var analyser = context.createAnalyser();
@@ -12,6 +11,7 @@ export async function main(ns) {
   analyser.fftSize = 128;
   var bufferLength = analyser.frequencyBinCount;
   var dataArray = new Uint8Array(bufferLength);
+  audio.play()
   while (true) {
     ns.clearLog();
     asd();

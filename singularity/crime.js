@@ -1,7 +1,8 @@
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL')
-	if (!ns.getPlayer().isWorking) {
+	var player=ns.getPlayer()
+	if (!player.isWorking||player.workType=="Working for Faction") {
 		let getGang = ns.args[0]
 		let loop = ns.args[1]
 		var crimes = ["Shoplift", "Rob Store", "Mug Someone", "Larceny", "Deal Drugs", "Traffick Illegal Arms", "Homicide", "Grand Theft Auto", "Kidnap", "Assassination", "Heist"]
@@ -14,7 +15,7 @@ export async function main(ns) {
 			if (loop) {
 				ns.print(" DONT CLOSE THIS WINDOW")
 				ns.print(" Use the kill button to stop the script")
-				ns.print(" kills:" + ns.getPlayer().numPeopleKilled + " karma:" + parseInt(ns.heart.break()))
+				ns.print(" kills:" + player.numPeopleKilled + " karma:" + parseInt(ns.heart.break()))
 			}
 			let time = ns.commitCrime(selectCrime(ns, crimes, money, getGang))
 			await ns.sleep(time)

@@ -1,5 +1,4 @@
 import { _beep2 } from "./sounds/beep2.js"
-import { _chargeSound } from "./sounds/chargeSound.js"
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -98,17 +97,15 @@ export async function main(ns) {
 			while (ns.purchaseAugmentation(factions[h], "NeuroFlux Governor")) { }
 
 		ns.stopAction()
-		new Audio("data:audio/wav;base64," + _chargeSound).play()
-		await ns.sleep(5000)
-		ns.installAugmentations("autoStart.js")
+		ns.run("/singularity/installAugs.js")!=0
 	}
 
 	async function buyLoop(array, stopWork = true) {
 		for (let i = 0; i < array.length; i++) {
-			if (ns.getAugmentationPrice(array[i][1]) < player.money && array[i][1] !== "The Red Pill") {
+			/*if (ns.getAugmentationPrice(array[i][1]) < player.money && array[i][1] !== "The Red Pill") {
 				ns.kill("/singularity/crime.js", "home", true)
 				ns.kill("/singularity/crime.js", "home", false)
-			}/*else if(!ns.scriptRunning("/singularity/crime.js","home")){
+			}else if(!ns.scriptRunning("/singularity/crime.js","home")){
 				ns.exec("/singularity/crime.js","home",1,false)
 			}*/
 			if (ns.getFactionRep(array[i][0]) < ns.getAugmentationRepReq(array[i][1])) {
