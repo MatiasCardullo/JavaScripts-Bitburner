@@ -6,8 +6,9 @@ export async function main(ns) {
 	aux = ns.getAugmentationsFromFaction(faction);
 	await ns.write(path, aux, 'w')
 	let output = ""
-	if (ns.fileExists("/singularity/augments/allAugments.txt")) {
-		aux2 = ns.read("/singularity/augments/allAugments.txt").split(',')
+	let file=ns.read("/singularity/augments/allAugments.txt")
+	if (file!="") {
+		aux2 = file.split(',')
 		output=','
 	}
 	for (let h = 0; h < aux.length; h++) {

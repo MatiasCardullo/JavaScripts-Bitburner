@@ -82,7 +82,7 @@ export async function main(ns) {
 		}
 		ns.print(myServers.length + "/25")
 		if (singularity) {
-			if (!b && ns.getServerMoneyAvailable("home") >= 260000) {
+			if (ns.serverExists("darkweb") && ns.getServerMoneyAvailable("home") >= 260000) {
 				ns.exec("/singularity/buyTor.js", "home")
 			}
 			if (ns.read("/singularity/coreCost.txt") < ns.getServerMoneyAvailable("home")) {
@@ -291,7 +291,7 @@ export async function main(ns) {
 		if (perc != null)
 			ram = (maxRam / 100) * perc;
 		else
-			ram = maxRam - 48;
+			ram = maxRam - 64;
 		if (ns.hasRootAccess(server) && ns.hasRootAccess(hackServer) && ram < maxRam - ns.getServerUsedRam(server)) {
 			let thread = ram / ns.getScriptRam(script);
 			await ns.scp(script, server)

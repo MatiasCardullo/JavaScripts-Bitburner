@@ -14,14 +14,14 @@ export async function main(ns) {
 			if (companies[i] == "Fulcrum Technologies") {
 				maxRep = 250000
 			}
-			if (companyRep < maxRep) {
+			if (companyRep < maxRep&&!player.factions.includes(companies[i])) {
 				if (player.isWorking && player.location == companies[i]) {
 					if (player.workRepGained / 2 + companyRep >= maxRep) {
 						ns.stopAction()
 					}
 					break;
 				} else {
-					focus = ns.read("/singularity/player/installedAugments.txt").includes("Neuroreceptor Management Implant")
+					focus =!ns.read("/singularity/player/installedAugments.txt").includes("Neuroreceptor Management Implant")
 					ns.run("/singularity/applyCompany.js", 1, companies[i], "software");
 					while (ns.scriptRunning("/singularity/applyCompany.js", "home")) { await ns.sleep(0) }
 					ns.run("/singularity/workCompany.js", 1, companies[i], focus);

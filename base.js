@@ -9,7 +9,7 @@ export async function main(ns) {
 	var level = ns.getServerSecurityLevel(server);
 	var money = ns.getServerMoneyAvailable(server);
 	var auxM = 0; var auxS = 0; var numM = 0; var numS = 0; var numHack = 0;
-	if (!ns.fileExists(server + "_log.txt"))
+	if (ns.read(server + "_log.txt")=="")
 		await ns.write(server + "_log.txt", " Money Hacked:\n\n", "w")
 	while (true) {
 		if (money < maxM) {

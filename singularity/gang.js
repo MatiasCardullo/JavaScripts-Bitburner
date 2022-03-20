@@ -16,7 +16,7 @@ export async function main(ns) {
 		}*/
 	}
 	totalChance /= gangCount;
-	g.setTerritoryWarfare(totalChance > 0.8)
+	g.setTerritoryWarfare(totalChance > 0.9)
 	//ns.write("gangsInfo.txt", output, 'w')
 	if (g.inGang) {
 		g.recruitMember(Math.random() * 100000)
@@ -48,5 +48,10 @@ export async function main(ns) {
 				g.purchaseEquipment(names[h], equip[i])
 			}
 		}
+		let output="";
+		for (var key in info) {
+			output+=key+':'+info[key]+','
+		}
+		await ns.write("/singularity/player/gang.txt",output,'w')
 	}
 }

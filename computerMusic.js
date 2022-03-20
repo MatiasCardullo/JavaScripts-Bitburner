@@ -3,7 +3,10 @@ export async function main(ns) {
 	ns.disableLog('sleep')
 	ns.clearLog()
 	ns.tail()
-	if (!ns.fileExists("Music.txt") || ns.args[0] != null) {
+	let textNext="next";let textBack="back";let textPause="pause";let textPlay="play";let textStop="stop";
+	if(ns.args[0] =="config"){
+		
+	}else if (ns.read("Music.txt")=="" || ns.args[0] != null) {
 		await ns.wget(formatPathFile(ns.args[0]), "Music.txt")
 	}
 	let visual;
