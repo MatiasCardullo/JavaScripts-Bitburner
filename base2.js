@@ -9,6 +9,7 @@ export async function main(ns) {
 	var aux = 0; var numM = 0; //var numS = 0;
 	while ((money / maxM * 100) < 90) {
 		await ns.grow(server);
+		await ns.sleep(1000)
 		money = ns.getServerMoneyAvailable(server);
 		aux = parseFloat(money / maxM * 100).toFixed(1);
 		if (numM != aux) {

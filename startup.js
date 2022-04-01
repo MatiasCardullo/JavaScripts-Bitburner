@@ -1,38 +1,43 @@
-import {_beep} from "./sounds/beep.js"
+import { _beep } from "./sounds/beep.js"
 import { _coplandOsEnterprise } from "./sounds/coplandOsEnterprise.js"
 
 /** @param {NS} ns **/
 export async function main(ns) {
-	let singularity=ns.args[0]
-	let getGang=ns.args[1]
-	let audio=[
-		new Audio("data:audio/wav;base64,"+_beep),
-		new Audio("data:audio/wav;base64,"+_coplandOsEnterprise),
+	let scaner = ns.args[0]
+	let singularity = ns.args[1]
+	let doCrime = ns.args[2]
+	let getGang = ns.args[3]
+	let setGang = true
+	let audio = [
+		new Audio("data:audio/wav;base64," + _beep),
+		new Audio("data:audio/wav;base64," + _coplandOsEnterprise),
 	]
 	ns.run("reset.js")
+	if (scaner == null)
+		scaner = await ns.prompt("Start Scan")
+	if (scaner)
+		ns.run("startScan.js")
+	let oldLogs = ns.ls("home", "Income.txt")
+	for (let i = 0; i < oldLogs.length; i++)
+		await ns.write(oldLogs[i], "", "w")
+	ns.run("/singularity/upgradeHomeCoresCost.js")
+	ns.run("/singularity/upgradeHomeRAMCost.js")
+	if (singularity == null)
+		singularity = await ns.prompt("You have the singularity?")
+	if (doCrime == null)
+		doCrime = await ns.prompt("Do Crime?")
+	if (singularity){
+		if (getGang == null)
+			getGang = await ns.prompt("Do you want to form a gang?")
+	}else{
+		setGang=false;
+	}
 	audio[0].play();
 	audio[1].play();
 	await ns.sleep(3000)
-	let file=ns.read("ascii_os.txt")
-	file = file.split('\r\n')
-	for (let i = 0; i < file.length; i++)
-		ns.tprint(file[i])
-	let oldLogs=ns.ls("home","_log.txt")
-	for (let i = 0; i < oldLogs.length; i++)
-		await ns.write(oldLogs[i],"","w")
-	ns.run("/singularity/upgradeHomeCoresCost.js")
-	ns.run("/singularity/upgradeHomeRAMCost.js")
-	if(singularity==null)
-		singularity=await ns.prompt("You have the singularity?")
-	if(singularity)
-		if(getGang==null)
-			getGang=await ns.prompt("Do you want to form a gang?")
-	if(ns.getServerMaxRam("home")<=32){
-		ns.run("allLite.js",1,singularity,getGang)
-	}else{
-		ns.run("all.js",1,singularity,getGang)
-	}
-	if(!singularity){
-		ns.run("hacknet.js")	
+	ns.tprint("\n"+ns.read("ascii_os.txt"))
+	ns.run("all.js", 1, singularity,doCrime, getGang, setGang)
+	if (!singularity) {
+		ns.run("hacknet.js")
 	}
 }

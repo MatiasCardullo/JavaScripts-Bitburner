@@ -2,7 +2,6 @@
 export async function main(ns) {
     ns.disableLog('sleep')
     ns.tail()
-    await ns.sleep(100000)
     let cnt;
     if(ns.args[0]!=null)
         cnt = ns.args[0];

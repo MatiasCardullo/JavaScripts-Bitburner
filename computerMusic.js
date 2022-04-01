@@ -1,12 +1,15 @@
+import { formatPathFile, shuffle, getInput, setInput } from "./lib/basicLib.js";
+import { bar, graphBar, concatGraphs } from "./lib/graph.js"
+
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('sleep')
 	ns.clearLog()
 	ns.tail()
-	let textNext="next";let textBack="back";let textPause="pause";let textPlay="play";let textStop="stop";
-	if(ns.args[0] =="config"){
-		
-	}else if (ns.read("Music.txt")=="" || ns.args[0] != null) {
+	let textNext = "next"; let textBack = "back"; let textPause = "pause"; let textPlay = "play"; let textStop = "stop";
+	if (ns.args[0] == "config") {
+
+	} else if (ns.read("Music.txt") == "" || ns.args[0] != null) {
 		await ns.wget(formatPathFile(ns.args[0]), "Music.txt")
 	}
 	let visual;
@@ -28,7 +31,7 @@ export async function main(ns) {
 		let wait; let song; let lastSong; let next; let back; let pause; let input; let min; let seg; let duration;
 		let nextSong = new Audio(listMusic[0][0])
 		for (let index = 1; index <= listMusic.length; index++) {
-			wait = 0;next = false; pause = false;
+			wait = 0; next = false; pause = false;
 			if (back) {
 				song = lastSong;
 				index -= 2;
@@ -36,7 +39,7 @@ export async function main(ns) {
 			} else {
 				song = nextSong;
 			}
-			if (index >1)
+			if (index > 1)
 				lastSong = new Audio(listMusic[index - 2][0])
 			else
 				lastSong = null;
@@ -117,48 +120,36 @@ export async function main(ns) {
 					for (let j = output.length; j < bufferLength - duration.length; j++) {
 						output += "_";
 					}
-					output += duration + " │ "
+					output += duration + "│ "
 					if (index - 2 > -1) {
 						output += listMusic[index - 2][1]
 					}
 					output += "\n "
-					var perc = parseFloat((song.currentTime / song.duration) * bufferLength)
-					var aux = perc;
-					for (let j = 1; j < bufferLength; j++) {
-						if (aux >= 1) {
-							output += "█"; aux--;
-						} else if (aux >= 0.5) {
-							output += "▌"; aux--;
-						} else {
-							output += "-";
-						}
-					}
-					output += " │> " + listMusic[index - 1][1]
+					output += bar(song.currentTime / song.duration, bufferLength - 1)
+					output += "│> " + listMusic[index - 1][1] + "\n"
 					visual = visualizer(analyser, bufferLength, dataArray, visual[1])
-					for (let j = 0; j < visual[0].length; j++) {
-						output += "\n "
-						output += visual[0][j] + "│ "
+					let listString = ""; let line = "";
+					for (let j = 0; j < 32; j++) {
 						if (j + index < listMusic.length)
-							output += listMusic[index + j][1]
+							listString += listMusic[index + j][1]
+						listString += line
+						line = '\n'
 					}
+					output += concatGraphs('\n' + visual[0], listString, "| ")
 					ns.clearLog()
 					ns.print(output)
 				}
-				if (wait > 3000) {
-					await ns.sleep(0)
-					wait = 0;
-				}
+				await ns.sleep(0)
 			}
 		}
 	}
 
 	function visualizer(analyser, bufferLength, dataArray, max = 0) {
-		let block = '█'; let semi = '▄'; let space = ' ';
-		let output = []; let line;
+		let output = "";
 		let maxHeight = 30;
 		let mult = 0.2;
 		let newDataArray = [];
-		let aux; let barHeight;
+		let aux;
 		analyser.getByteFrequencyData(dataArray);
 		for (var i = 0; i < bufferLength; i++) {
 			aux = dataArray[i] * mult;
@@ -168,67 +159,7 @@ export async function main(ns) {
 				max = aux
 			}
 		}
-		for (var i = maxHeight; i > -1; i--) {
-			line = "";
-			for (var j = 0; j < bufferLength; j++) {
-				barHeight = newDataArray[j] / max * maxHeight;
-				if (barHeight > i)
-					line += block;
-				else if (barHeight + 0.5 > i)
-					line += semi;
-				else
-					line += space;
-			}
-			output.push(line);
-		}
+		output = graphBar(maxHeight, newDataArray, max)
 		return [output, max];
 	}
-}
-
-export function getInput() {
-	let terminalInput = ''
-	eval('terminalInput = document.getElementById("terminal-input")')
-	if (!terminalInput)
-		return false;
-	return terminalInput.value;
-}
-
-export function setInput(input) {
-	let terminalInput = ''
-	eval('terminalInput = document.getElementById("terminal-input")')
-	if (!terminalInput)
-		return false;
-	terminalInput.value = input;
-	const handler = Object.keys(terminalInput)[1];
-	terminalInput[handler].onChange({ target: terminalInput });
-	terminalInput[handler].onKeyDown({ keyCode: 13, preventDefault: () => null });
-	return true;
-}
-
-export function shuffle(array) {
-	let currentIndex = array.length, randomIndex;
-	while (currentIndex != 0) {
-		randomIndex = Math.floor(Math.random() * currentIndex);
-		currentIndex--;
-		[array[currentIndex], array[randomIndex]] = [
-			array[randomIndex], array[currentIndex]];
-	}
-	return array;
-}
-
-export function formatPathFile(path) {
-	let index = path.indexOf(String.fromCharCode(92));
-	while (index > 0) {
-		// change '\' to '/'
-		path = replaceAt(path, index, '/')
-		index = path.indexOf(String.fromCharCode(92))
-	}
-	return "file:///" + path
-}
-
-export function replaceAt(string, index, replacement) {
-	if (index >= string.length) {
-		return string.valueOf();
-	}
-	return string.substring(0, index) + replacement + string.substring(index + 1);
 }

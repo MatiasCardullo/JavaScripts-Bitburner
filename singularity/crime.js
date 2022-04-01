@@ -18,7 +18,7 @@ export async function main(ns) {
 				ns.print(" kills:" + player.numPeopleKilled + " karma:" + parseInt(ns.heart.break()))
 			}
 			let time = ns.commitCrime(selectCrime(ns, crimes, money, getGang))
-			await ns.sleep(time)
+			await ns.sleep(time-500)
 		} while (loop)
 	}
 

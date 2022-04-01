@@ -28,6 +28,9 @@ export async function main(ns) {
 	for (let h = 0; h < invites.length; h++) {
 		//ns.print(invites[h])
 		if (!zones.includes(invites[h])) {
+			if(invites[h]=="Illuminati"){
+				ns.stopAction()
+			}
 			ns.joinFaction(invites[h]);
 		}
 

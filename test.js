@@ -1,8 +1,8 @@
 import { _beep } from "./sounds/beep.js"
 import { _win95StartUp } from "./sounds/win95StartUp.js"
-import { mp3ToBase64 } from "mp3ToBase64.js"
 import { mediafire } from "mediafire.js"
 import { youtubeMP3 } from "youtube.js"
+import * as graph from"./lib/graph.js"
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -10,14 +10,20 @@ export async function main(ns) {
 	ns.clearLog();
 	let block = '█▌';
 	let space = '  ';
+	let key1 = "block";
+	let key2 = "space";
 	//let output = "√";
 	//let output = "✓";
 	let aux;
+	let obj = { [key1]: block, [key2]: space }
+	ns.tprint(obj["block"])
+	ns.tprint(obj["space"])
+	ns.tprint(graph.bar(12.5,50))
 	ns.tail()
-	while(true){
-		aux=getInput()
+	while (true) {
+		aux = getInput()
 		ns.print(aux)
-		if(aux=="exit"){
+		if (aux == "exit") {
 			ns.exit()
 		}
 		await ns.sleep(100)
@@ -25,9 +31,9 @@ export async function main(ns) {
 
 	let output = 46784654165;
 	ns.tprint(output);
-	let b36=output.toString(36)
+	let b36 = output.toString(36)
 	ns.tprint(b36);
-	aux=parseInt(b36,36)
+	aux = parseInt(b36, 36)
 	ns.tprint(aux)
 
 	for (let h = 0; h < 20; h++) {
