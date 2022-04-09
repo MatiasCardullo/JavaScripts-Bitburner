@@ -1,13 +1,13 @@
 // Built upon u/pwillia7 's stock script.
 // u/ferrus_aub stock script using simple portfolio algorithm.
-import { runSafeScript } from "./lib/basicLib.js";
+import { runSafeScript, runScript } from "./lib/basicLib.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
     var maxSharePer = 1.00
     var stockBuyPer = 0.60
     var stockVolPer = 0.05
-    var moneyKeep = 1000000
+    var moneyKeep = 75000000
     var minSharePer = 5
     var stockAccess = false;
     let onlySell = ns.args[0]
@@ -15,9 +15,7 @@ export async function main(ns) {
     ns.disableLog('sleep');
     ns.disableLog('run');
     ns.disableLog('getServerMoneyAvailable');
-    ns.disableLog('stock.purchase4SMarketData');
-    ns.disableLog('stock.purchase4SMarketDataTixApi');
-    if(onlySell!=true){
+    if (onlySell != true) {
         await ns.sleep(15000)
     }
     while (true) {
@@ -28,22 +26,29 @@ export async function main(ns) {
         if (stockAccess) {
             let empty = true;
             let stocks = ns.read("/stock/symbols.txt").split(",")
-            if (stocks >1) {
-                await runSafeScript(ns, "/stock/getSymbols.js")
+            if (ns.read("/stock/symbols.txt") == "") {
+                await runScript(ns, "/stock/getSymbols.js")
             } else {
                 for (let stok of stocks) {
-                    var position = ns.stock.getPosition(stok);
-                    if (position[0]) {
+                    try {
+                        var position = ns.stock.getPosition(stok);
+                    } catch {
+                        ns.toast("stockTest:getPosition", 'error')
+                        ns.exit()
+                    }
+                    if (position && position[0]) {
                         empty = false;
                         await sellPositions(stok);
                     }
-                    if (!onlySell)
-                        await buyPositions(stok);
+                    if (!onlySell) {
+                        await buyPositions(stok, "Short", position[2]);
+                        await buyPositions(stok, "Long", position[0]);
+                    }
                 }
                 if (empty && onlySell) {
                     ns.exit()
                 }
-                await ns.sleep(0)
+                await ns.sleep(1000)
             }
         } else {
             await runSafeScript(ns, "/stock/purchaseWseAccount.js")
@@ -59,9 +64,9 @@ export async function main(ns) {
         }
     }
 
-    async function buyPositions(stok) {
+    async function buyPositions(stok, pos, shares) {
         await runSafeScript(ns, "/stock/getMaxShares.js", stok)
-        let maxShares = parseFloat(ns.read("/stock/" + stok + "/maxShares.txt")) * maxSharePer - position[0]
+        let maxShares = parseFloat(ns.read("/stock/" + stok + "/maxShares.txt")) * maxSharePer - shares
         await runSafeScript(ns, "/stock/getAskPrice.js", stok)
         let askPrice = parseFloat(ns.read("/stock/" + stok + "/price.txt"))
         await runSafeScript(ns, "/stock/getForecast.js", stok)
@@ -71,11 +76,12 @@ export async function main(ns) {
         //ns.print(maxSharePer,askPrice,forecast,volPer)
         let playerMoney = ns.getServerMoneyAvailable('home');
         if (forecast >= stockBuyPer && volPer <= stockVolPer) {
-            if (playerMoney - moneyKeep > ns.stock.getPurchaseCost(stok, minSharePer, "Long")) {
-                let shares = Math.min((playerMoney - moneyKeep - 100000) / askPrice, maxShares);
-                if (shares != 0) {
-                    await runSafeScript(ns, "/stock/buy.js", stok, shares)
-                    ns.print('Bought ' + stok + ': ' + shares)
+            await runSafeScript(ns, "/stock/getPurchaseCost.js", stok, minSharePer, pos)
+            if (playerMoney - moneyKeep > parseFloat(ns.read("/stock/" + stok + "/buyCost.txt"))) {
+                let buyShares = Math.min((playerMoney/ 2 - moneyKeep - 100000) / askPrice, maxShares);
+                if (buyShares != 0) {
+                    await runSafeScript(ns, "/stock/buy.js", stok, buyShares)
+                    ns.print('Bought ' + stok + ': ' + buyShares)
                 }
             }
         }
@@ -85,8 +91,10 @@ export async function main(ns) {
         await runSafeScript(ns, "/stock/getForecast.js", stok)
         let forecast = parseFloat(ns.read("/stock/" + stok + "/forecast.txt"))
         if (forecast < 0.5) {
-            ns.run("/stock/sell.js", 1, stok, position[0])
+            await runScript(ns, "/stock/sell.js", stok, position[0])
             ns.print('Sold ' + stok + ': ' + position[0])
+            await runScript(ns, "/stock/sell.js", stok, position[2])
+            ns.print('Sold ' + stok + ': ' + position[2])
         }
     }
 }

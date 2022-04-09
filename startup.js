@@ -1,5 +1,6 @@
 import { _beep } from "./sounds/beep.js"
 import { _coplandOsEnterprise } from "./sounds/coplandOsEnterprise.js"
+import { runSafeScript } from "./lib/basicLib.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -12,16 +13,16 @@ export async function main(ns) {
 		new Audio("data:audio/wav;base64," + _beep),
 		new Audio("data:audio/wav;base64," + _coplandOsEnterprise),
 	]
-	ns.run("reset.js")
+	await runSafeScript(ns,"reset.js")
 	if (scaner == null)
 		scaner = await ns.prompt("Start Scan")
 	if (scaner)
-		ns.run("startScan.js")
+		await runSafeScript(ns,"startScan.js")
 	let oldLogs = ns.ls("home", "Income.txt")
 	for (let i = 0; i < oldLogs.length; i++)
 		await ns.write(oldLogs[i], "", "w")
-	ns.run("/singularity/upgradeHomeCoresCost.js")
-	ns.run("/singularity/upgradeHomeRAMCost.js")
+	await runSafeScript(ns,"/singularity/upgradeHomeCoresCost.js")
+	await runSafeScript(ns,"/singularity/upgradeHomeRAMCost.js")
 	if (singularity == null)
 		singularity = await ns.prompt("You have the singularity?")
 	if (doCrime == null)
@@ -36,8 +37,8 @@ export async function main(ns) {
 	audio[1].play();
 	await ns.sleep(3000)
 	ns.tprint("\n"+ns.read("ascii_os.txt"))
-	ns.run("all.js", 1, singularity,doCrime, getGang, setGang)
+	await runSafeScript(ns,"all.js",singularity,doCrime, getGang, setGang)
 	if (!singularity) {
-		ns.run("hacknet.js")
+		await runSafeScript(ns,"hacknet.js")
 	}
 }

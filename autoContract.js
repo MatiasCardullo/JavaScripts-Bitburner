@@ -1,3 +1,4 @@
+import { runSafeScript } from "./lib/basicLib.js";
 import { _beep } from "./sounds/beep.js"
 // autocontract.ns v20190515 original by /u/hyperpandiculation
 // modified by MatiasCardullo
@@ -9,96 +10,109 @@ export async function main(ns) {
     ns.disableLog('scan');
     ns.disableLog('kill');
     ns.disableLog('exec');
+    let failed = ns.read("/cct/autoContract_fail.txt")
     let listFiles = [];
-    let serverCct=""
-    
+    let serverCct = ""
+
     var servers = ["home"];
-	for (let i = 0; i < servers.length; i++) {
-		var thisScan = ns.scan(servers[i]);
-		for (let j = 0; j < thisScan.length; j++) {
-			if (servers.indexOf(thisScan[j]) === -1) {
-				listFiles=ns.ls(thisScan[j],".cct")
-                if(listFiles.length>0){
-                    serverCct=thisScan[j];
+    for (let i = 0; i < servers.length; i++) {
+        var thisScan = ns.scan(servers[i]);
+        for (let j = 0; j < thisScan.length; j++) {
+            if (servers.indexOf(thisScan[j]) === -1) {
+                listFiles = ns.ls(thisScan[j], ".cct")
+                if (listFiles.length > 0) {
+                    serverCct = thisScan[j];
                     break;
                 }
-				servers.push(thisScan[j]);
-			}
-		}
-        if(listFiles.length>0)
+                servers.push(thisScan[j]);
+            }
+        }
+        if (listFiles.length > 0)
             break;
-	}
+    }
 
     for (let z = 0; z < listFiles.length; z++) {
-        //ns.tprint(listFiles[z])
-        let inputData = ns.codingcontract.getData(listFiles[z],serverCct);
-        let inputType = ns.codingcontract.getContractType(listFiles[z], serverCct);
-        let outputData = 0;
-        let outputResult = null;
-        new Audio("data:audio/wav;base64," + _beep).play()
-        switch (inputType) {
-            case "Algorithmic Stock Trader I":
-                if (inputData.length > 1)
-                    outputData = solverStockTrader([1, inputData]);
-                break;
-            case "Algorithmic Stock Trader II":
-                if (inputData.length > 1)
-                    outputData = solverStockTrader([Math.floor(inputData.length / 2), inputData]);
-                break;
-            case "Algorithmic Stock Trader III":
-                if (inputData.length > 1)
-                    outputData = solverStockTrader([2, inputData]);
-                break;
-            case "Algorithmic Stock Trader IV":
-                outputData = solverStockTrader(inputData);
-                break;
-            case "Array Jumping Game":
-                outputData = solverArrayJumpingGame(inputData);
-                break;
-            case "Find All Valid Math Expressions":
-                outputData = solverWaysToExpress(inputData);
-                break;
-            case "Find Largest Prime Factor":
-                outputData = solverLargestPrime(inputData);
-                break;
-            case "Generate IP Addresses":
-                outputData = solverGenerateIPs(inputData);
-                break;
-            case "Merge Overlapping Intervals":
-                outputData = solverMergeRanges(inputData);
-                break;
-            case "Minimum Path Sum in a Triangle":
-                outputData = solverTrianglePath(inputData);
-                break;
-            case "Spiralize Matrix":
-                outputData = solverSpiralizeMatrix(inputData);
-                break;
-            case "Subarray with Maximum Sum":
-                outputData = solverLargestSubset(inputData);
-                break;
-            case "Total Ways to Sum":
-                outputData = solverWaysToSum(inputData);
-                break;
-            case "Unique Paths in a Grid I":
-                outputData = solverUniquePaths(inputData);
-                break;
-            case "Unique Paths in a Grid II":
-                outputData = solverUniquePathsII(inputData);
-                break;
-            case "Sanitize Parentheses in Expression":
-                outputData = solverSanitizeParentheses(inputData);
-                break;
-            default:
-                outputData = ""; outputResult = "NO SOLVER YET";
-                break;
+        if (!failed.includes(listFiles[z])) {
+            //ns.tprint(listFiles[z])
+            await runSafeScript(ns, "/cct/getData.js", listFiles[z], serverCct)
+            await runSafeScript(ns, "/cct/getContractType.js", listFiles[z], serverCct)
+            let name = listFiles[z].slice(0, listFiles[z].length - 4).replace('&', 'And')
+            //let inputData = ns.codingcontract.getData(listFiles[z], serverCct)
+            let inputData = ns.read("/cct/" + name + "/data.txt");
+            let inputType = ns.read("/cct/" + name + "/type.txt");
+            let outputData = 0;
+            let outputResult = null;
+            new Audio("data:audio/wav;base64," + _beep).play()
+            switch (inputType) {
+                case "Algorithmic Stock Trader I":
+                    if (inputData.length > 1)
+                        outputData = solverStockTrader([1, inputData]);
+                    break;
+                case "Algorithmic Stock Trader II":
+                    if (inputData.length > 1)
+                        outputData = solverStockTrader([Math.floor(inputData.length / 2), inputData]);
+                    break;
+                case "Algorithmic Stock Trader III":
+                    if (inputData.length > 1)
+                        outputData = solverStockTrader([2, inputData]);
+                    break;
+                case "Algorithmic Stock Trader IV":
+                    outputData = solverStockTrader(inputData);
+                    break;
+                case "Array Jumping Game":
+                    outputData = solverArrayJumpingGame(inputData);
+                    break;
+                case "Find All Valid Math Expressions":
+                    outputData = solverWaysToExpress(inputData);
+                    break;
+                case "Find Largest Prime Factor":
+                    outputData = solverLargestPrime(inputData);
+                    break;
+                case "Generate IP Addresses":
+                    outputData = solverGenerateIPs(inputData);
+                    break;
+                case "Merge Overlapping Intervals":
+                    outputData = solverMergeRanges(inputData);
+                    break;
+                case "Minimum Path Sum in a Triangle":
+                    outputData = solverTrianglePath(inputData);
+                    break;
+                case "Spiralize Matrix":
+                    outputData = solverSpiralizeMatrix(inputData);
+                    break;
+                case "Subarray with Maximum Sum":
+                    outputData = solverLargestSubset(inputData);
+                    break;
+                case "Total Ways to Sum":
+                    outputData = solverWaysToSum(inputData);
+                    break;
+                case "Unique Paths in a Grid I":
+                    outputData = solverUniquePaths(inputData);
+                    break;
+                case "Unique Paths in a Grid II":
+                    outputData = solverUniquePathsII(inputData);
+                    break;
+                case "Sanitize Parentheses in Expression":
+                    outputData = solverSanitizeParentheses(inputData);
+                    break;
+                default:
+                    outputData = ""; outputResult = "NO SOLVER YET";
+                    break;
+            }
+            if (outputResult != "NO SOLVER YET") {
+                if (Array.isArray(outputData))
+                    outputData = outputData.toString()
+                await runSafeScript(ns, "/cct/attempt.js", outputData, listFiles[z], serverCct)
+                outputResult = ns.read("/cct/" + name + "attempt.txt")
+            }
+            let aux = serverCct + ", " + listFiles[z] + ", " + inputType + ", " + outputData + ", " + outputResult;
+            await ns.write("/cct/autoContract_log.txt", aux + "\n", 'a');
+            if (outputResult == "false") {
+                await ns.write("/cct/autoContract_log.txt", "Failed data for debug: " + inputData + "\n", 'a');
+                await ns.write("/cct/autoContract_fail.txt", listFiles[z] + ',', 'a');
+            }
+            new Audio("data:audio/wav;base64," + _beep).play()
         }
-        if (outputResult != "NO SOLVER YET")
-            outputResult = ns.codingcontract.attempt(outputData, listFiles[z], serverCct);
-        let aux = serverCct + ", " + listFiles[z] + ", " + inputType + ", " + outputData + ", " + outputResult;
-        await ns.write("autoContract_log.txt",aux+"\n",'a');
-        if (!outputResult)
-            await ns.write("autoContract_log.txt","Failed data for debug: " + JSON.stringify(inputData)+"\n",'a');
-        new Audio("data:audio/wav;base64," + _beep).play()
     }
 }
 

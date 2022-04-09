@@ -1,19 +1,14 @@
+import { runSafeScript } from "./lib/basicLib.js";
 export const companies = [
-	"MegaCorp", "ECorp","Fulcrum Technologies", "Clarke Incorporated", "Bachman & Associates", "NWO",
+	"Fulcrum Technologies","MegaCorp", "ECorp", "Clarke Incorporated", "Bachman & Associates", "NWO",
 	"KuaiGong International", "Four Sigma", "Blade Industries", "OmniTek Incorporated"
 ];
 
 /** @param {NS} ns **/
 export async function main(ns) {
 	//ns.tail()
-	let allCompaies=true;
+	let allCompanies=true;
 	let player = ns.getPlayer()
-	let upgrade = player.factions.includes("Fulcrum Secret Technologies")
-	if (upgrade) {
-		let pid = ns.run("/singularity/getMyAugments.js")
-		while (ns.isRunning(pid)) await ns.sleep(0)
-		upgrade = ns.read("/singularity/player/installedAugments.txt").includes("PC Direct-Neural Interface NeuroNet Injector")
-	}
 	let focus; let companyRep; let faction;
 	let maxRep = 200000
 	if (player.hacking >= 250) {
@@ -28,7 +23,7 @@ export async function main(ns) {
 			}
 			companyRep = ns.getCompanyRep(companies[i])
 			if (companyRep < maxRep && !player.factions.includes(faction)) {
-				allCompaies=false
+				allCompanies=false
 				if (player.isWorking && player.location == companies[i]) {
 					if (player.workRepGained / 2 + companyRep >= maxRep) {
 						ns.stopAction()
@@ -36,15 +31,17 @@ export async function main(ns) {
 					break;
 				} else {
 					focus = !ns.read("/singularity/player/installedAugments.txt").includes("Neuroreceptor Management Implant")
-					ns.run("/singularity/applyCompany.js", 1, companies[i], "software");
-					while (ns.scriptRunning("/singularity/applyCompany.js", "home")) { await ns.sleep(0) }
-					ns.run("/singularity/workCompany.js", 1, companies[i], focus);
+					await runSafeScript(ns,"/singularity/applyCompany.js", companies[i], "software")
+					await runSafeScript(ns,"/singularity/workCompany.js", companies[i], focus)
+					await ns.write("/singularity/player/company.txt",companies[i],'w')
 					break;
 				}
+			}else if(ns.read("/singularity/player/company.txt")==companies[i]){
+				break;
 			}
 		}
-		if(allCompaies&&ns.read("/singularity/player/allCompaies.txt")){
-			await ns.write("/singularity/player/allCompaies.txt","true",'w')
+		if(allCompanies&&ns.read("/singularity/player/allCompanies.txt")){
+			await ns.write("/singularity/player/allCompanies.txt","true",'w')
 		}
 	}
 }

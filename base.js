@@ -2,14 +2,14 @@
 export async function main(ns) {
 	ns.disableLog('getServerMoneyAvailable')
 	ns.disableLog('getServerSecurityLevel')
-	var server = ns.args[0];
-	var maxM = ns.args[1];
-	var minS = ns.args[2];
-	var threads = ns.args[3];
-	var level = ns.getServerSecurityLevel(server);
-	var money = ns.getServerMoneyAvailable(server);
-	var auxM = 0; var auxS = 0; var numM = 0; var numS = 0;
-	var numHack = ns.read(server + "Income.txt")
+	let server = ns.args[0];
+	let maxM = ns.args[1];
+	let minS = ns.args[2];
+	let threads = ns.args[3];
+	let level = ns.getServerSecurityLevel(server);
+	let money = ns.getServerMoneyAvailable(server);
+	let auxM = 0; var auxS = 0; var numM = 0; var numS = 0;
+	let numHack = ns.read(server + "Income.txt")
 	if (numHack == "") {
 		numHack = 0;
 	}
@@ -33,6 +33,7 @@ export async function main(ns) {
 				//await ns.write(server + "_log.txt", money + '-' + new Date().getTime(), "a")
 				await ns.write(server + "Income.txt", numHack, "w")
 			}
+			await ns.weaken(server);
 			//ns.print(numHack + " stolen from " + server);
 			level = ns.getServerSecurityLevel(server);
 		}
