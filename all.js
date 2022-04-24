@@ -1,4 +1,5 @@
-import { inputcommands, execSafeScript } from "./lib/basicLib.js";
+import { inputcommands, execSafeScript, execScript } from "./lib/basicLib.js";
+import { speak } from "./lib/voice.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -7,9 +8,9 @@ export async function main(ns) {
 	let servers = scanServers();
 	let allServers = servers[0];
 	let serversWithMoney = servers[1];
+	let serversWithRam = servers[2];
 	let serversWithMoneyWithoutRam = servers[3];
 	var serverMaxOut = [];
-	let serversWithRam = servers[2];
 	var singularity = ns.args[0]
 	var doCrime = ns.args[1]
 	var getGang = ns.args[2]
@@ -30,56 +31,60 @@ export async function main(ns) {
 		{ price: 30, name: 'HTTPWorm.exe', level: minPorts[4] },
 		{ price: 250, name: 'SQLInject.exe', level: minPorts[5] }
 	];
-	
+
 	await ns.sleep(10000)
+	await execSafeScript(ns, "/singularity/joinFactions.js");
+	await execSafeScript(ns, "/singularity/augments.js");
 	ns.exec("monitor.js", "home");
 	ns.tail()
 	let ramServer;
 	while (true) {
+		await execScript(ns, "/singularity/getPlayer.js")
 		let myServers = ns.read("myServers.txt").split(',')
 		homeRAM = ns.getServerMaxRam("home")
 		if (homeRAM > 512) {
-			ramServer = 512 * 2
+			ramServer = 1024
 		} else {
-			ramServer = homeRAM * 2;
+			ramServer = homeRAM;
 		}
 		//ns.print(serverMaxOut.length, serverMaxOut)
-		if ((ns.getServerMoneyAvailable("home") > 25000000000 || ns.read("/stock/access.txt") == "true,true,true,true") && !ns.scriptRunning("stockTest.js", "home")) {
-			ns.exec("stockTest.js", "home")
+		let p = ns.read("/logs/playerStats.txt")
+		if ((ns.getServerMoneyAvailable("home") > 25000000000 || (p.hasWseAccount && p.hasTixApiAccess && p.has4SData && p.has4SDataTixApi)) && !ns.scriptRunning("/stock/market.js", "home")) {
+			ns.exec("/stock/market.js", "home")
 		}
-		await execSafeScript(ns, "autoContract.js")
-		if (setGang) {
-			await execSafeScript(ns, "/singularity/gang.js")
-		}
+		await execSafeScript(ns, "/cct/contractManager.js")
 		if (singularity) {
 			if (!ns.serverExists("darkweb") && ns.getServerMoneyAvailable("home") > 200000) {
-				ns.exec("/singularity/buyTor.js", "home")
+				await execScript(ns, "/singularity/buyTor.js")
 			}
 			if (ns.read("/singularity/coreCost.txt") < ns.getServerMoneyAvailable("home")) {
 				await execSafeScript(ns, "/singularity/upgradeHomeCores.js")
-				await execSafeScript(ns, "/singularity/upgradeHomeCoresCost.js");
+				await execScript(ns, "/singularity/upgradeHomeCoresCost.js");
 			}
 			if (ns.read("/singularity/RAMCost.txt") < ns.getServerMoneyAvailable("home")) {
 				await execSafeScript(ns, "/singularity/upgradeHomeRAM.js");
-				await execSafeScript(ns, "/singularity/upgradeHomeRAMCost.js");
+				await execScript(ns, "/singularity/upgradeHomeRAMCost.js");
 			}
 			if (myServers.length < 25 && doCrime) {
 				if (doCrime && !ns.scriptRunning("/singularity/crime.js", "home"))
 					ns.exec("/singularity/crime.js", "home", 1, getGang, false);
 				while (homeRAM < 64 && ns.scriptRunning("/singularity/crime.js", "home")) { await ns.sleep(0) }
 			} else {
-				await execSafeScript(ns, "/singularity/company.js")
-				if (homeRAM > 32) {
-					ns.exec("/singularity/augments.js", "home");
-					while (homeRAM < 64 && ns.scriptRunning("/singularity/augments.js", "home")) { await ns.sleep(0) }
-				}
+				await execScript(ns, "/singularity/company.js")
 			}
+			if (setGang) {
+				await execSafeScript(ns, "/singularity/gang.js")
+			}
+			if (homeRAM > 64)
+				await execSafeScript(ns, "/singularity/augments.js");
 			await execSafeScript(ns, "/singularity/joinFactions.js")
+		} else {
+			await execScript(ns, "hacknet.js")
 		}
 		await rootServers(allServers);
 		await maxOutServers(serversWithMoney, serversWithRam, myServers);
 		if (myServers.length < 25) {
-			ns.exec("buyServer.js", "home", 1, serversWithMoneyWithoutRam.toString(), ramServer);
+			await execScript(ns, "buyServer.js", "home", serversWithMoneyWithoutRam.toString(), ramServer);
 		}
 		ns.exec("mail.js", "home");
 		await ns.sleep(0)
@@ -130,8 +135,9 @@ export async function main(ns) {
 	}
 
 	async function rootServers(servers) {
-		var facServers = ["CSEC", "avmnite-02h", "I.I.I.I", "run4theh111z", "The-Cave", "w0r1d_d43m0n", "fulcrumassets"]
-		let bServers = ns.read("backdoor.txt")
+		let redpill = ns.read("/logs/installedAugments.txt").includes("The Red Pill")
+		let facServers = ["CSEC", "avmnite-02h", "I.I.I.I", "run4theh111z", "The-Cave", "fulcrumassets"]
+		let bServers = ns.read("/logs/backdoor.txt")
 		if (!s) {
 			purchaseExe();
 			s = ns.fileExists("sqlinject.exe");
@@ -169,13 +175,13 @@ export async function main(ns) {
 				if (ns.getServerNumPortsRequired(server) <= port && ns.getServerRequiredHackingLevel(server) <= ns.getHackingLevel()) {
 					ns.nuke(server);
 				}
-			} else if (ns.getServerRequiredHackingLevel(server) <= ns.getHackingLevel() && !bServers.includes(server) && facServers.includes(server))
+			} else if (ns.getServerRequiredHackingLevel(server) <= ns.getHackingLevel() && !bServers.includes(server) && (redpill || facServers.includes(server)))
 				if (await backdoor(server)) {
 					let output = "";
 					if (bServers != "")
 						output += ','
 					output += server
-					await ns.write("backdoor.txt", output, 'a')
+					await ns.write("/logs/backdoor.txt", output, 'a')
 				}
 		}
 	}
@@ -193,7 +199,7 @@ export async function main(ns) {
 		for (let i = 1; i < serversWithMoney.length; i++) {
 			server = serversWithMoney[i];
 			await ns.sleep(0)
-			if (!serverMaxOut.includes(server) && serverMaxOut.length < serversWithMoney.length) {
+			if (!serverMaxOut.includes(server) || serverMaxOut.length == serversWithMoney.length) {
 				let maxM = ns.getServerMaxMoney(server);
 				let minL = ns.getServerMinSecurityLevel(server);
 				let money = ns.getServerMoneyAvailable(server);
@@ -201,12 +207,12 @@ export async function main(ns) {
 				let ram = ns.getServerMaxRam(server);
 				let percM = parseInt(money / maxM * 100);
 				let percL = parseInt(minL / security * 100);
-				if (!ns.scriptRunning(script2, "home")) {
-					await hackServer(script2, "home", server, maxM, minL);
+				if (!ns.scriptRunning("baseHome.js", "home")) {
+					await hackServer("baseHome.js", "home", server, maxM, minL);
 				}
 				if (ram > 0) {
 					if (!ns.scriptRunning(script, server)) {
-						if (percM < 90 || percL < 90 && !ns.fileExists(script, server)) {
+						if (percM < 90 || percL < 90) {
 							for (let j = 0; j < serversWithRam.length; j++) {
 								if (!ns.scriptRunning(script, serversWithRam[j])) {
 									if (await hackServer(script2, serversWithRam[j], server, maxM, minL, 99.9999))
@@ -220,11 +226,12 @@ export async function main(ns) {
 								}
 							}
 							count++;
-							if (count >= runInParalel) {
+							if (count >= runInParalel && serverMaxOut.length < serversWithMoney.length) {
 								break;
 							}
 						} else {
-							ns.killall(server)
+							if (!ns.scriptRunning(script, server))
+								ns.killall(server)
 							await hackServer(script, server, server, maxM, minL, 99.9999);
 						}
 					} else if (!serverMaxOut.includes(server)) {
@@ -233,7 +240,7 @@ export async function main(ns) {
 				} else {
 					if (ns.serverExists(server + "_hack")) {
 						if (!ns.scriptRunning(script, server + "_hack")) {
-							if (percM < 90 || percL < 90 && !ns.fileExists(script, server + "_hack")) {
+							if (percM < 90 || percL < 90) {
 								for (let j = 0; j < serversWithRam.length; j++) {
 									if (!ns.scriptRunning(script, serversWithRam[j])) {
 										if (await hackServer(script2, serversWithRam[j], server, maxM, minL, 99.9999))
@@ -247,11 +254,12 @@ export async function main(ns) {
 									}
 								}
 								count++;
-								if (count >= runInParalel) {
+								if (count >= runInParalel && serverMaxOut.length < serversWithMoney.length) {
 									break;
 								}
 							} else {
-								ns.killall(server + "_hack")
+								if (!ns.scriptRunning(script, server + "_hack"))
+									ns.killall(server + "_hack")
 								await hackServer(script, server + "_hack", server, maxM, minL, 99.9999);
 							}
 						} else {
@@ -280,8 +288,8 @@ export async function main(ns) {
 				let percM = parseInt(ns.getServerMoneyAvailable(hackServer) / maxM * 100);
 				let percL = parseInt(minL / ns.getServerSecurityLevel(hackServer) * 100);
 				if (percM < 90 || percL < 90) {
-					await ns.sleep(0)
 					for (let j = 0; j < thread / 4; j++) {
+						await ns.sleep(0)
 						if (!ns.scriptRunning("base-" + j + ".js", server, maxM)) {
 							ns.mv(server, script, "base-" + j + ".js")
 							await ns.scp(script, server)
@@ -293,8 +301,11 @@ export async function main(ns) {
 					return true;
 			}
 			else {
-				if (script == "base.js")
-					ns.toast("Running Hack Script in " + server)
+				if (script == "base.js") {
+					let text = "Running Hack Script in " + server
+					speak(text, 11)
+					ns.toast(text)
+				}
 				ns.exec(script, server, thread, hackServer, maxM, minL, thread);
 			}
 		}
@@ -318,19 +329,21 @@ export async function main(ns) {
 	}
 
 	async function backdoor(server) {
-		if (singularity && ns.getScriptRam("/singularity/backdoor.js") <= homeRAM - ns.getServerUsedRam("home")) {
-			ns.exec("/singularity/connect.js", "home", 1, server)
-			while (ns.scriptRunning("/singularity/connect.js", "home")) { await ns.sleep(0) }
-			ns.exec("/singularity/backdoor.js", "home")
-			ns.toast(`Installing backdoor ${server}`)
-			while (ns.scriptRunning("/singularity/backdoor.js", "home")) { await ns.sleep(0) }
-			ns.exec("/singularity/connect.js", "home", 1, "home")
+		let text = "Installing backdoor in " + server
+		if (singularity) {
+			await execSafeScript(ns, "/singularity/connect.js", "home", server)
+			let pid = await execScript(ns, "/singularity/backdoor.js")
+			speak(text, 11)
+			ns.toast(text)
+			while (ns.isRunning(pid)) { await ns.sleep(0) }
+			await execScript(ns, "/singularity/connect.js", "home", "home")
 			return true;
 		} else {
 			if (inputcommands(`run connect.js ${server}`)) {
 				await ns.sleep(200)
 				if (inputcommands(`backdoor`)) {
-					ns.toast(`Installing backdoor ${server}`)
+					speak(text, 11)
+					ns.toast(text)
 					await ns.sleep(5000)
 					return (inputcommands(`home`))
 				}

@@ -10,11 +10,15 @@ export async function main(ns) {
 				let auxcity = player.city
 				if (auxcity !== "Sector-12")
 					ns.travelToCity("Sector-12")
+				ns.stopAction()
 				ns.gymWorkout('powerhouse gym', pStatsName[i], false)
+				await ns.sleep(1000)
 				/*else if(player.workType)
 					ns.stopAction()*/
 			}
 		}
 		await ns.sleep(0)
+		player = ns.getPlayer()
 	}
+	ns.stopAction()
 }

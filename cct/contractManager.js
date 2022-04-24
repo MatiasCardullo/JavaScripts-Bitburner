@@ -1,5 +1,5 @@
 import { runSafeScript } from "./lib/basicLib.js";
-import { _beep } from "./sounds/beep.js"
+import { _beep } from "./sounds/beep.js";
 // autocontract.ns v20190515 original by /u/hyperpandiculation
 // modified by MatiasCardullo
 
@@ -11,6 +11,7 @@ export async function main(ns) {
     ns.disableLog('kill');
     ns.disableLog('exec');
     let failed = ns.read("/cct/autoContract_fail.txt")
+    let log = ns.read("/cct/autoContract_log.txt")
     let listFiles = [];
     let serverCct = ""
 
@@ -38,11 +39,11 @@ export async function main(ns) {
             await runSafeScript(ns, "/cct/getContractType.js", listFiles[z], serverCct)
             let name = listFiles[z].slice(0, listFiles[z].length - 4).replace('&', 'And')
             //let inputData = ns.codingcontract.getData(listFiles[z], serverCct)
-            let inputData = ns.read("/cct/" + name + "/data.txt");
+            let inputData = JSON.parse(ns.read("/cct/" + name + "/data.txt"));
             let inputType = ns.read("/cct/" + name + "/type.txt");
             let outputData = 0;
             let outputResult = null;
-            new Audio("data:audio/wav;base64," + _beep).play()
+            //new Audio("data:audio/wav;base64," + _beep).play()
             switch (inputType) {
                 case "Algorithmic Stock Trader I":
                     if (inputData.length > 1)
@@ -100,18 +101,18 @@ export async function main(ns) {
                     break;
             }
             if (outputResult != "NO SOLVER YET") {
-                if (Array.isArray(outputData))
-                    outputData = outputData.toString()
+                outputData = JSON.stringify(outputData)
                 await runSafeScript(ns, "/cct/attempt.js", outputData, listFiles[z], serverCct)
                 outputResult = ns.read("/cct/" + name + "attempt.txt")
+                new Audio("data:audio/wav;base64," + _beep).play()
             }
             let aux = serverCct + ", " + listFiles[z] + ", " + inputType + ", " + outputData + ", " + outputResult;
-            await ns.write("/cct/autoContract_log.txt", aux + "\n", 'a');
+            if(!log.includes(aux))
+                await ns.write("/cct/autoContract_log.txt", aux + "\n", 'a');
             if (outputResult == "false") {
                 await ns.write("/cct/autoContract_log.txt", "Failed data for debug: " + inputData + "\n", 'a');
                 await ns.write("/cct/autoContract_fail.txt", listFiles[z] + ',', 'a');
             }
-            new Audio("data:audio/wav;base64," + _beep).play()
         }
     }
 }

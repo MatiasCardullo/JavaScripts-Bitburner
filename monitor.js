@@ -1,5 +1,5 @@
 import * as Graph from "./lib/graph.js";
-import { getInput } from "./lib/basicLib.js";
+import { getInput, setInput } from "./lib/basicLib.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -7,32 +7,62 @@ export async function main(ns) {
 	let dictionary = serversDictionary()
 	let isHacking = new Array(dictionary.length);
 	isHacking.fill(null)
-	let file; let symbols;
 	ns.tail()
-
+	let loop = false;
+	let count = 0;
 	let input; let selected = "servers";
 	while (true) {
 		ns.clearLog()
 		input = getInput()
-		switch (input) {
-			case "market":
-				file = ns.read("/stock/symbols.txt")
-				if (file != "")
-					symbols = file.split(',')
-			case "servers":
-			case "augments":
-				selected = input;
-				break;
+		if (input != selected)
+			switch (input) {
+				case "market":
+				case "servers":
+				case "augments":
+				case "gang":
+					selected = input;
+					break;
+				case "loop":
+					loop = !loop;
+					setInput("")
+					break;
+
+			}
+		if (loop) {
+			count++;
+			switch (parseInt(count / 1500)) {
+				case 0:
+					selected = "servers"
+					break;
+				case 1:
+					selected = "market"
+					break;
+				case 2:
+					selected = "augments"
+					break;
+				case 3:
+					selected = "gang"
+					break;
+				default:
+					count = 0;
+					break;
+			}
 		}
 		switch (selected) {
 			case "servers":
 				await displayServers(dictionary, input);
 				break;
 			case "market":
-				displayMarket(symbols)
+				displayMarket()
 				break;
 			case "augments":
-				displayAugments()
+				if (input == "rep")
+					displayAugments(2)
+				else
+					displayAugments()
+				break;
+			case "gang":
+				displayGang()
 				break;
 		}
 		await ns.sleep(0)
@@ -76,9 +106,9 @@ export async function main(ns) {
 				if (server.name == name || myServers.includes(name)) {
 					await ns.scp(server.name + "Income.txt", name, "home")
 					if (ns.read(server.name + "Income.txt") != "")
-						ns.mv("home", server.name + "Income.txt", "/logs/" + server.name + "Income.txt")
+						ns.mv("home", server.name + "Income.txt", "/logs/income/" + server.name + ".txt")
 				}
-				let file = ns.read("/logs/" + server.name + "Income.txt")
+				let file = ns.read("/logs/income/" + server.name + ".txt")
 				if (server.name == search) {
 					showServer = i;
 					/*for (let j = file.length - 1; 2 < j && j > file.length - 101; j--) {
@@ -101,7 +131,7 @@ export async function main(ns) {
 					if (!(mLevel > 2 / 3 && sLevel > 2 / 3))
 						isHacking[index] = false;
 				} else {
-					if (mLevel > 0.999 && sLevel > 0.999) {
+					if (mLevel > 0.99 && sLevel > 0.99) {
 						isHacking[index] = true;
 						line.push("Hacking 100%")
 					} else {
@@ -191,28 +221,40 @@ export async function main(ns) {
 		return dictionary
 	}
 
-	async function displayMarket(symbols) {
+	function displayMarket() {
+		let symbols = ns.read("/stock/symbols.txt").split(',')
 		let fileNames = ["price", "volatility", "forecast", "maxShares", "myShares", "invested"]
 		let total = 0;
-		let maxLength = 0;
+		let maxLength = 40;
 		let company;
-		for (let i = 0; i < symbols.length; i++) {
-			company = ns.read("/stock/" + symbols[i] + "/name.txt").split(',')[0]
-			company.length > maxLength ? maxLength = company.length : null
-		}
-		if (symbols) {
+		if (Array.isArray(symbols)) {
 			let data = [["Company", "Price", "Volatility", "Forecast", "Max Shares", "My Shares", "Invested"]];
 			for (let i = 0; i < symbols.length; i++) {
-				company = ns.read("/stock/" + symbols[i] + "/name.txt").split(',')[0].padEnd(maxLength + 5 - symbols[i].length, '_') + symbols[i]
+				company = ns.read("/stock/" + symbols[i] + "/name.txt").split(',')[0].padEnd(maxLength + 5 - symbols[i].length, '-') + symbols[i]
 				let aux = [company];
 				for (let j = 0; j < fileNames.length; j++) {
-					file = ns.read("/stock/" + symbols[i] + '/' + fileNames[j] + ".txt")
-					if (file != "") {
-						if (fileNames[j] == "invested")
-							total += parseFloat(file)
-						aux.push(ns.nFormat(file, '0.000a'))
+					let file = ns.read("/stock/" + symbols[i] + '/' + fileNames[j] + ".txt")
+					if (file != "" && file != "0") {
+						switch (fileNames[j]) {
+							case "myShares":
+								aux.push(parseFloat(parseFloat(file) / parseFloat(ns.read("/stock/" + symbols[i] + "/maxShares.txt")) * 100).toFixed(3) + "%")
+								break;
+							case "forecast":
+								aux.push(ns.nFormat(file - 0.5, '0.000a'))
+								break;
+							case "invested":
+								if (!isNaN(parseFloat(file)))
+									total += parseFloat(file)
+							default:
+								try {
+									aux.push(ns.nFormat(file, '0.000a'))
+								} catch {
+									aux.push(ns.nFormat(0, '0.000a'))
+								}
+								break
+						}
 					} else
-						aux.push("0.000")
+						aux.push("0")
 				}
 				data.push(aux)
 			}
@@ -223,48 +265,76 @@ export async function main(ns) {
 		}
 	}
 
-	function displayAugments() {
-		let prices = ns.read("/singularity/augments/augsPrice.txt").split('\n')
-		let purchased = ns.read("/singularity/player/purchasedAugments.txt").split(',')
-		let toBuy = ns.read("/singularity/player/augmentsToBuy.txt").split(',')
-		let myFactions = ns.read("/singularity/player/factions.txt").replaceAll(' ', '').replace('&', 'And')
-		let output = [];
-		ns.print(Graph.box(null, null, purchased, 'center'))
-		for (let i in toBuy) {
-			let line = [];
-			prices.forEach((a) => a.includes(toBuy[i]) ? line = a.split(',') : null)
-			if (line.length > 0) {
-				let factions = []
-				ns.ls("home", "/singularity/factions/").forEach((f) => ns.read(f).includes(toBuy[i]) ? factions.push(f) : null)
-				for (let j in factions) {
-					factions[j] = factions[j].split('/').pop().replace("Augments.txt", "")
+	function displayAugments(sortBy = 1) {
+		let purchased = [["Purchased Augments"]]
+		ns.read("/logs/purchasedAugments.txt").split(',').forEach((p) => purchased.push([p]))
+		let augsTable = Graph.table(purchased, 'first', 'center')
+		let prices = ns.read("/augments/augsPrice.txt").split('\n')
+		let toBuy = ns.read("/logs/augmentsToBuy.txt")
+		let myFactions = ns.read("/logs/factions.txt").replaceAll(' ', '').replace('&', 'And')
+		let factionsRep = [["Factions", "Rep", "Favor"]]
+		myFactions.split(',').forEach(function (f) {
+			let rep = ns.read("/factions/" + f + "/reputation.txt")
+			let fav = ns.read("/factions/" + f + "/favor.txt")
+			try {
+				factionsRep.push([f, ns.nFormat(rep, '0.0a'), ns.nFormat(fav, '0.0a')])
+			} catch { }
+		})
+		let factionTable = Graph.table(factionsRep, 'first', 'center')
+		ns.print(Graph.concatGraphs(factionTable, augsTable))
+		try {
+			if (toBuy != "") {
+				toBuy = toBuy.split(',')
+				let output = [];
+				for (let i in toBuy) {
+					let line = [];
+					prices.forEach((a) => a.includes(toBuy[i]) ? line = a.split(',') : null)
+					if (line.length > 0) {
+						let factions = []
+						ns.ls("home", "/augments.txt").forEach((f) => ns.read(f).includes(toBuy[i]) ? factions.push(f) : null)
+						for (let j in factions) {
+							factions[j] = factions[j].split('/')[2]
+						}
+						line.push(factions)
+						output.push(line)
+					}
 				}
-				line.push(factions)
-				output.push(line)
-			}
-		}
-		let sort = true;
-		while (sort) {
-			sort = false;
-			for (let i = 1; i < output.length; i += 1) {
-				if (output[i - 1][1] > output[i][1]) {
-					sort = true;
-					let tmp = output[i - 1];
-					output[i - 1] = output[i];
-					output[i] = tmp;
+				let sort = true;
+				while (sort) {
+					sort = false;
+					for (let i = 1; i < output.length; i += 1) {
+						if (parseInt(output[i - 1][sortBy]) > parseInt(output[i][sortBy])) {
+							sort = true;
+							let tmp = output[i - 1];
+							output[i - 1] = output[i];
+							output[i] = tmp;
+						}
+					}
 				}
+				for (let i in output) {
+					output[i][1] = ns.nFormat(output[i][1], '0.0a')
+					output[i][2] = ns.nFormat(output[i][2], '0.0a')
+					let aux = [];
+					output[i][3].forEach(function (e) {
+						if (myFactions.includes(e)) {
+							aux.push(e)
+						}
+					})
+					output[i][3] = aux;
+				}
+				prices[0] = prices[0].split(',')
+				prices[0][0] = "Augments to buy"
+				prices[0].push("Factions with the augment")
+				output.unshift(prices[0])
+				ns.print(Graph.table(output, 'first', 'center'))
 			}
+		} catch {
+
 		}
-		for (let i in output) {
-			output[i][1] = ns.nFormat(output[i][1], '0.0a')
-			output[i][2] = ns.nFormat(output[i][2], '0.0a')
-			let aux = [];
-			output[i][3].forEach((e) => myFactions.includes(e) ? aux.push(e) : null)
-			output[i][3] = aux;
-		}
-		prices[0] = prices[0].split(',')
-		prices[0].push("Factions")
-		output.unshift(prices[0])
-		ns.print(Graph.table(output, 'first', 'center'))
+	}
+
+	function displayGang(){
+		ns.print(ns.read("/gang/otherGangs.txt"))
+		ns.print(ns.read("/gang/info.txt"))
 	}
 }

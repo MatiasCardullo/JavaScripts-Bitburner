@@ -1,24 +1,26 @@
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL')
-	var player=ns.getPlayer()
-	if (!player.isWorking||player.workType=="Working for Faction") {
+	let player = ns.getPlayer()
+	if (!player.isWorking || player.workType == "Working for Faction") {
 		let getGang = ns.args[0]
 		let loop = ns.args[1]
-		var crimes = ["Shoplift", "Rob Store", "Mug Someone", "Larceny", "Deal Drugs", "Traffick Illegal Arms", "Homicide", "Grand Theft Auto", "Kidnap", "Assassination", "Heist"]
+		var crimes = JSON.parse(ns.read("/logs/crimeStats.txt"))
 		var money = new Array(crimes.length);
 		for (let i = 0; i < crimes.length; i++) {
-			money[i] = ns.getCrimeStats(crimes[i]).money / ns.getCrimeStats(crimes[i]).time
+			money[i] = crimes[i].money / crimes[i].time
 		}
 		do {
 			ns.clearLog()
+			let info = " kills:" + player.numPeopleKilled + " karma:" + parseInt(ns.heart.break())
 			if (loop) {
-				ns.print(" DONT CLOSE THIS WINDOW")
-				ns.print(" Use the kill button to stop the script")
-				ns.print(" kills:" + player.numPeopleKilled + " karma:" + parseInt(ns.heart.break()))
+				ns.print(" DONT CLOSE THIS WINDOW\n Use the kill button to stop the script")
+				ns.print(info)
+			} else {
+				ns.toast(info, 'info')
 			}
 			let time = ns.commitCrime(selectCrime(ns, crimes, money, getGang))
-			await ns.sleep(time-500)
+			await ns.sleep(time - 500)
 		} while (loop)
 	}
 
@@ -26,23 +28,22 @@ export async function main(ns) {
 
 /** @param {NS} ns **/
 export function selectCrime(ns, crimes, money, getGang = false) {
-	let person = ns.getPlayer()
+	let player = ns.getPlayer()
 	let chance = new Array(crimes.length);
-	let crime; let maxChance; let maxMoney; let index;
+	let maxChance; let maxMoney; let index;
 	for (let i = 0; i < crimes.length; i++) {
-		crime = ns.getCrimeStats(crimes[i])
-		chance[i] = (crime.hacking_success_weight * person.hacking +
-			crime.strength_success_weight * person.strength +
-			crime.defense_success_weight * person.defense +
-			crime.dexterity_success_weight * person.dexterity +
-			crime.agility_success_weight * person.agility +
-			crime.charisma_success_weight * person.charisma +
-			0.025 * person.intelligence) / 975 / crime.difficulty *
-			person.crime_success_mult * (1 + Math.pow(person.intelligence, 0.8) / 600);
+		chance[i] = (crimes[i].hacking_success_weight * player.hacking +
+			crimes[i].strength_success_weight * player.strength +
+			crimes[i].defense_success_weight * player.defense +
+			crimes[i].dexterity_success_weight * player.dexterity +
+			crimes[i].agility_success_weight * player.agility +
+			crimes[i].charisma_success_weight * player.charisma +
+			0.025 * player.intelligence) / 975 / crimes[i].difficulty *
+			player.crime_success_mult * (1 + Math.pow(player.intelligence, 0.8) / 600);
 		//ns.print(chance[i])
 	}
 	if (chance[6] > 0.90) {
-		if ((getGang && -54000 < ns.heart.break()) || ns.getPlayer().numPeopleKilled < 30)
+		if ((getGang && -54000 < ns.heart.break()) || player.numPeopleKilled < 30)
 			return "Homicide"
 	}
 	maxChance = 0; maxMoney = 0;
@@ -58,5 +59,5 @@ export function selectCrime(ns, crimes, money, getGang = false) {
 			index = i;
 		}
 	}
-	return crimes[index]
+	return crimes[index].name
 }

@@ -8,7 +8,7 @@ export async function main(ns) {
 		if(!ns.getPlayer().hasCorporation ){
 			//Create corporation if it does not exist
 			nsc.createCorporation("Nexxus",true);
-		}else if(nsc.getDivision(AGRI_NAME)!==null){
+		}else if(nsc.getDivision(AGRI_NAME)==null){
 			//Create division if not exists
 			nsc.expandIndustry("Agriculture", AGRI_NAME);
 		}else if(!nsc.hasUnlockUpgrade("Smart Supply")){
@@ -23,6 +23,7 @@ export async function main(ns) {
 			for (const city of cityList) {
 				nsc.expandCity(AGRI_NAME,city);
 			}
+		}else{
 		}
 	}
 }

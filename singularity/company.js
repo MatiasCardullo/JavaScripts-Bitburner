@@ -30,18 +30,19 @@ export async function main(ns) {
 					}
 					break;
 				} else {
-					focus = !ns.read("/singularity/player/installedAugments.txt").includes("Neuroreceptor Management Implant")
+					focus = !ns.read("/logs/installedAugments.txt").includes("Neuroreceptor Management Implant")
 					await runSafeScript(ns,"/singularity/applyCompany.js", companies[i], "software")
 					await runSafeScript(ns,"/singularity/workCompany.js", companies[i], focus)
-					await ns.write("/singularity/player/company.txt",companies[i],'w')
+					await ns.write("/logs/company.txt",companies[i],'w')
 					break;
 				}
-			}else if(ns.read("/singularity/player/company.txt")==companies[i]){
+			}else if(ns.read("/logs/company.txt")==companies[i]){
+				allCompanies=false
 				break;
 			}
 		}
-		if(allCompanies&&ns.read("/singularity/player/allCompanies.txt")){
-			await ns.write("/singularity/player/allCompanies.txt","true",'w')
+		if(allCompanies&&ns.read("/logs/allCompanies.txt")==""){
+			await ns.write("/logs/allCompanies.txt","true",'w')
 		}
 	}
 }

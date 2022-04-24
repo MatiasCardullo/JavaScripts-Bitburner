@@ -1,3 +1,5 @@
+import { speak } from "./lib/voice.js";
+
 /** @param {NS} ns **/
 export async function main(ns) {
 	let output = []
@@ -7,7 +9,9 @@ export async function main(ns) {
 		if (ns.serverExists(servers[i] + "_hack")) {
 			output.push(servers[i] + "_hack")
 		} else if (ns.purchaseServer(servers[i] + "_hack", ns.args[1]) !== "") {
-			ns.toast(`Purchased server "${servers[i]}_hack"`,"success",15000)
+			let text=`Purchased server "${servers[i]}_hack"`
+			speak(text,11)
+			ns.toast(text,"success",15000)
 			output.push(servers[i] + "_hack")
 		}
 	}

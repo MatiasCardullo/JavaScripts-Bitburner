@@ -1,15 +1,16 @@
 import { runSafeScript } from "./lib/basicLib.js";
+import { speak } from "./lib/voice.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
 	let zones = ["Chongqing", "Sector-12", "Aevum", "New Tokyo", "Ishima", "Volhaven"]
 	await runSafeScript(ns,"/singularity/checkFactionInvitations.js")
-	let invites = ns.read("/singularity/player/invitations.txt").split(',')
-	let ownAugments = ns.read("/singularity/player/installedAugments.txt").split(',')
+	let invites = ns.read("/logs/invitations.txt").split(',')
+	let ownAugments = ns.read("/logs/installedAugments.txt").split(',')
 	let pathFactionAugments; let augments;
 	let join;
 	for (let h = 0; h < zones.length; h++) {
-		pathFactionAugments = "/singularity/factions/" + zones[h].replaceAll(' ', '') + "Augments.txt"
+		pathFactionAugments = "/factions/" + zones[h].replaceAll(' ', '') + "/augments.txt"
 		if (ns.read(pathFactionAugments)=="") {
 			ns.run("/singularity/factionsAugments.js", 1, zones[h])
 			await ns.sleep(50);
@@ -24,7 +25,8 @@ export async function main(ns) {
 		if (join) {
 			if (ns.getPlayer().city !== zones[h])
 				ns.travelToCity(zones[h])
-			ns.joinFaction(zones[h])
+			if(ns.joinFaction(zones[h]))
+				speak("Joined "+zones[h],11)
 			break;
 		}
 	}
@@ -34,7 +36,8 @@ export async function main(ns) {
 			if(invites[h]=="Illuminati"){
 				ns.stopAction()
 			}
-			ns.joinFaction(invites[h]);
+			if(ns.joinFaction(invites[h]))
+				speak("Joined "+invites[h],11)
 		}
 
 	}
