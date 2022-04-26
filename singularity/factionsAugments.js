@@ -3,7 +3,7 @@ export async function main(ns) {
 	let faction = ns.args[0];
 	let path = "/factions/" + faction.replaceAll(' ', '').replace('&', 'And') + "/augments.txt"
 	let aux = []; let aux2 = [];
-	aux = ns.getAugmentationsFromFaction(faction);
+	aux = ns.singularity.getAugmentationsFromFaction(faction);
 	await ns.write(path, aux, 'w')
 	let writein = false
 	let file = ns.read("/augments/allAugments.txt")

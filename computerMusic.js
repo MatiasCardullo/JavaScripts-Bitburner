@@ -28,6 +28,7 @@ export async function main(ns) {
 	listMusic = shuffle(listMusic)
 	let context = new AudioContext();
 	while (true) {
+		let volume = 1;
 		let wait; let song; let lastSong; let next; let back; let pause; let input; let min; let seg; let duration;
 		let nextSong = new Audio(listMusic[0][0])
 		for (let index = 1; index <= listMusic.length; index++) {
@@ -72,6 +73,20 @@ export async function main(ns) {
 			ns.toast("Playing " + listMusic[index - 1][1], "info", 10000)
 			while (!song.ended) {
 				switch (getInput().toString().toLowerCase()) {
+					case "-":
+						if (volume > 0) {
+							volume -= 0.05
+							song.volume = volume
+							setInput("")
+						} else { setInput("Volume at min") }
+						break;
+					case "+":
+						if (volume < 1) {
+							volume += 0.05
+							song.volume = volume
+							setInput("")
+						} else { setInput("Volume at max") }
+						break;
 					case "next":
 						if (nextSong != null) {
 							next = true;
@@ -116,7 +131,7 @@ export async function main(ns) {
 					seg = Math.floor(song.currentTime - 60 * min)
 					if (seg < 10)
 						seg = "0" + seg
-					output = " " + min + ":" + seg + " "
+					output = "\n " + min + ":" + seg + " "
 					for (let j = output.length; j < bufferLength - duration.length; j++) {
 						output += "_";
 					}
@@ -128,14 +143,14 @@ export async function main(ns) {
 					output += bar(song.currentTime / song.duration, bufferLength - 1)
 					output += "│> " + listMusic[index - 1][1] + "\n"
 					visual = visualizer(analyser, bufferLength, dataArray, visual[1])
-					let listString = ""; let line = "";
-					for (let j = 0; j < 32; j++) {
+					let listString = ""; let line = "\n";
+					for (let j = 0; j < 31; j++) {
 						if (j + index < listMusic.length)
 							listString += listMusic[index + j][1]
 						listString += line
 						line = '\n'
 					}
-					output += concatGraphs('\n' + visual[0], listString, "| ")
+					output += concatGraphs(visual[0], listString, "| ")
 					ns.clearLog()
 					ns.print(output)
 				}

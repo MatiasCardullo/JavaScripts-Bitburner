@@ -1,17 +1,19 @@
 import { runSafeScript } from "./lib/basicLib.js";
-import { speak } from "./lib/voice.js";
+import { speak } from "./sounds/voice.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
+	await runSafeScript(ns, "getPlayer.js")
+	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
 	let zones = ["Chongqing", "Sector-12", "Aevum", "New Tokyo", "Ishima", "Volhaven"]
-	await runSafeScript(ns,"/singularity/checkFactionInvitations.js")
+	await runSafeScript(ns, "/singularity/checkFactionInvitations.js")
 	let invites = ns.read("/logs/invitations.txt").split(',')
 	let ownAugments = ns.read("/logs/installedAugments.txt").split(',')
 	let pathFactionAugments; let augments;
 	let join;
 	for (let h = 0; h < zones.length; h++) {
 		pathFactionAugments = "/factions/" + zones[h].replaceAll(' ', '') + "/augments.txt"
-		if (ns.read(pathFactionAugments)=="") {
+		if (ns.read(pathFactionAugments) == "") {
 			ns.run("/singularity/factionsAugments.js", 1, zones[h])
 			await ns.sleep(50);
 		}
@@ -23,21 +25,25 @@ export async function main(ns) {
 			}
 		}
 		if (join) {
-			if (ns.getPlayer().city !== zones[h])
-				ns.travelToCity(zones[h])
-			if(ns.joinFaction(zones[h]))
-				speak("Joined "+zones[h],11)
+			if (player.city !== zones[h])
+				await runSafeScript(ns, "/singularity/travelToCity.js",zones[h])
+			if (ns.singularity.joinFaction(zones[h])) {
+				speak("Joineed " + zones[h], 11)
+				ns.toast("Joined " + zones[h], "success", 10000)
+			}
 			break;
 		}
 	}
 	for (let h = 0; h < invites.length; h++) {
 		//ns.print(invites[h])
-		if (invites[h]!=""&&!zones.includes(invites[h])) {
-			if(invites[h]=="Illuminati"){
-				ns.stopAction()
+		if (invites[h] != "" && !zones.includes(invites[h])) {
+			if (invites[h] == "Illuminati") {
+				ns.singularity.stopAction()
 			}
-			if(ns.joinFaction(invites[h]))
-				speak("Joined "+invites[h],11)
+			if (ns.singularity.joinFaction(invites[h])) {
+				speak("Joineed " + invites[h], 11)
+				ns.toast("Joined " + invites[h], "success", 10000)
+			}
 		}
 
 	}

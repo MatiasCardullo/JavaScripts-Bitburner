@@ -1,4 +1,4 @@
-import { speak } from "./lib/voice.js";
+import { speak } from "./sounds/voice.js";
 
 /** @param {NS} ns */
 export async function main(ns) {

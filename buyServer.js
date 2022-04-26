@@ -1,4 +1,4 @@
-import { speak } from "./lib/voice.js";
+import { speak } from "./sounds/voice.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -10,7 +10,7 @@ export async function main(ns) {
 			output.push(servers[i] + "_hack")
 		} else if (ns.purchaseServer(servers[i] + "_hack", ns.args[1]) !== "") {
 			let text=`Purchased server "${servers[i]}_hack"`
-			speak(text,11)
+			//speak(text,11)
 			ns.toast(text,"success",15000)
 			output.push(servers[i] + "_hack")
 		}

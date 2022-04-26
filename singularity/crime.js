@@ -1,7 +1,7 @@
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL')
-	let player = ns.getPlayer()
+	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
 	if (!player.isWorking || player.workType == "Working for Faction") {
 		let getGang = ns.args[0]
 		let loop = ns.args[1]
@@ -19,7 +19,7 @@ export async function main(ns) {
 			} else {
 				ns.toast(info, 'info')
 			}
-			let time = ns.commitCrime(selectCrime(ns, crimes, money, getGang))
+			let time = ns.singularity.commitCrime(selectCrime(ns, crimes, money, getGang))
 			await ns.sleep(time - 500)
 		} while (loop)
 	}
@@ -28,7 +28,7 @@ export async function main(ns) {
 
 /** @param {NS} ns **/
 export function selectCrime(ns, crimes, money, getGang = false) {
-	let player = ns.getPlayer()
+	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
 	let chance = new Array(crimes.length);
 	let maxChance; let maxMoney; let index;
 	for (let i = 0; i < crimes.length; i++) {

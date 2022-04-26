@@ -1,5 +1,5 @@
 import { inputcommands, execSafeScript, execScript } from "./lib/basicLib.js";
-import { speak } from "./lib/voice.js";
+import { speak } from "./sounds/voice.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -17,7 +17,7 @@ export async function main(ns) {
 	var setGang = ns.args[3]
 	var homeRAM;
 	var b = false, f = false, r = false, h = false, s = false;
-	let minPorts = [0, 5000, 5000, 5000, 5000, 5000];
+	let minPorts = [0, 50000, 50000, 50000, 50000, 50000];
 	for (let i = 0; i < allServers.length; i++) {
 		let port = ns.getServerNumPortsRequired(allServers[i]);
 		let hacklevel = ns.getServerRequiredHackingLevel(allServers[i]);
@@ -33,23 +33,19 @@ export async function main(ns) {
 	];
 
 	await ns.sleep(10000)
-	await execSafeScript(ns, "/singularity/joinFactions.js");
-	await execSafeScript(ns, "/singularity/augments.js");
 	ns.exec("monitor.js", "home");
 	ns.tail()
 	let ramServer;
 	while (true) {
-		await execScript(ns, "/singularity/getPlayer.js")
 		let myServers = ns.read("myServers.txt").split(',')
 		homeRAM = ns.getServerMaxRam("home")
-		if (homeRAM > 512) {
+		if (homeRAM > 1024) {
 			ramServer = 1024
 		} else {
 			ramServer = homeRAM;
 		}
 		//ns.print(serverMaxOut.length, serverMaxOut)
-		let p = ns.read("/logs/playerStats.txt")
-		if ((ns.getServerMoneyAvailable("home") > 25000000000 || (p.hasWseAccount && p.hasTixApiAccess && p.has4SData && p.has4SDataTixApi)) && !ns.scriptRunning("/stock/market.js", "home")) {
+		if (ns.getServerMoneyAvailable("home") > 25000000000 && !ns.scriptRunning("/stock/market.js", "home")) {
 			ns.exec("/stock/market.js", "home")
 		}
 		await execSafeScript(ns, "/cct/contractManager.js")
@@ -57,38 +53,39 @@ export async function main(ns) {
 			if (!ns.serverExists("darkweb") && ns.getServerMoneyAvailable("home") > 200000) {
 				await execScript(ns, "/singularity/buyTor.js")
 			}
-			if (ns.read("/singularity/coreCost.txt") < ns.getServerMoneyAvailable("home")) {
+			if (ns.read("/logs/coreCost.txt") < ns.getServerMoneyAvailable("home")) {
 				await execSafeScript(ns, "/singularity/upgradeHomeCores.js")
 				await execScript(ns, "/singularity/upgradeHomeCoresCost.js");
 			}
-			if (ns.read("/singularity/RAMCost.txt") < ns.getServerMoneyAvailable("home")) {
+			if (ns.read("/logs/RAMCost.txt") < ns.getServerMoneyAvailable("home")) {
 				await execSafeScript(ns, "/singularity/upgradeHomeRAM.js");
 				await execScript(ns, "/singularity/upgradeHomeRAMCost.js");
 			}
-			if (myServers.length < 25 && doCrime) {
-				if (doCrime && !ns.scriptRunning("/singularity/crime.js", "home"))
-					ns.exec("/singularity/crime.js", "home", 1, getGang, false);
-				while (homeRAM < 64 && ns.scriptRunning("/singularity/crime.js", "home")) { await ns.sleep(0) }
-			} else {
-				await execScript(ns, "/singularity/company.js")
+			if (ns.read("/logs/minPrice.txt") == "null" || ns.getServerMoneyAvailable("home") < parseFloat(ns.read("/logs/minPrice.txt"))) {
+				if (doCrime && myServers.length < 25) {
+					let pid;
+					if (doCrime)
+						pid = ns.exec("/singularity/crime.js", "home", 1, getGang, false);
+					while (homeRAM < 64 && ns.isRunning(pid)) { await ns.sleep(0) }
+				} else {
+					await execScript(ns, "/singularity/company.js")
+				}
 			}
-			if (setGang) {
-				await execSafeScript(ns, "/singularity/gang.js")
-			}
-			if (homeRAM > 64)
-				await execSafeScript(ns, "/singularity/augments.js");
 			await execSafeScript(ns, "/singularity/joinFactions.js")
+			await execSafeScript(ns, "/singularity/augments.js");
+			if (setGang) {
+				await execScript(ns, "/singularity/gang.js")
+			}
 		} else {
-			await execScript(ns, "hacknet.js")
+			await execSafeScript(ns, "hacknet.js")
 		}
 		await rootServers(allServers);
 		await maxOutServers(serversWithMoney, serversWithRam, myServers);
 		if (myServers.length < 25) {
 			await execScript(ns, "buyServer.js", "home", serversWithMoneyWithoutRam.toString(), ramServer);
 		}
-		ns.exec("mail.js", "home");
+		await execSafeScript(ns, "mail.js");
 		await ns.sleep(0)
-
 	}
 
 	function scanServers() {
@@ -289,13 +286,13 @@ export async function main(ns) {
 				let percL = parseInt(minL / ns.getServerSecurityLevel(hackServer) * 100);
 				if (percM < 90 || percL < 90) {
 					for (let j = 0; j < thread / 4; j++) {
-						await ns.sleep(0)
 						if (!ns.scriptRunning("base-" + j + ".js", server, maxM)) {
 							ns.mv(server, script, "base-" + j + ".js")
 							await ns.scp(script, server)
 							ns.exec("base-" + j + ".js", server, 4, hackServer, maxM)
 						}
 					}
+					await ns.sleep(0)
 				}
 				else
 					return true;

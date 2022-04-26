@@ -1,4 +1,4 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-	ns.getBitNodeMultipliers()
+	await ns.write("/logs/bitnodeMultipliers.txt",ns.getBitNodeMultipliers(),'w')
 }

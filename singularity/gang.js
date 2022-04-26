@@ -5,8 +5,7 @@ export async function main(ns) {
 	ns.clearLog()
 	ns.disableLog('getServerMoneyAvailable')
 	let file;
-	let g = ns.gang;
-	if (g.inGang()) {
+	if (ns.gang.inGang()) {
 		let serversBought = ns.read("myServers.txt").split(',').length == 25
 		let totalChance = 0;
 		await runSafeScript(ns, "/gang/getOtherGangInformation.js")
@@ -17,27 +16,32 @@ export async function main(ns) {
 		await runSafeScript(ns, "/gang/getGangInformation.js")
 		let infoGang = JSON.parse(ns.read("/gang/info.txt"))
 		//ns.tprint(infoGang.wantedLevel)
-		await runScript(ns, "/gang/setTerritoryWarfare.js", totalChance > 0.6)
+		if (infoGang.territory < 1)
+			await runScript(ns, "/gang/setTerritoryWarfare.js", totalChance > 0.5)
 		await runSafeScript(ns, "/gang/getMembersInformation.js")
 		let members = JSON.parse(ns.read("/gang/membersInfo.txt"))
 		file = ns.read("/gang/equipment.txt")
-		if (file == "")
+		if (file == "") {
 			await runSafeScript(ns, "/gang/getEquipmentData.js")
+			file = ns.read("/gang/equipment.txt")
+		}
 		let equipment = JSON.parse(file)
+		let fullEquipment = true
 		for (let h = 0; h < members.length; h++) {
 			for (let i = 0; i < equipment.length; i++) {
-				if (ns.read("/gang/members/" + members[h].name + ".txt").includes(equipment[i].name)) {
+				if (members[h].upgrades.includes(equipment[i].name)||members[h].augmentations.includes(equipment[i].name)) {
 					continue;
-				} else if (serversBought && equipment[i].cost < ns.getServerMoneyAvailable("home")) {
-					await runScript(ns, "/gang/purchaseEquipment.js", members[h].name, equipment[i].name)
+				} else if (serversBought) {
+					fullEquipment = false;
+					await runScript(ns, "/gang/purchaseEquipment.js", members[h].name, equipment[i].name);
 				}
 			}
-			if (infoGang.territory < 1 && members.length == 12) {
+			if (infoGang.territory < 1 && members.length == 12 && serversBought && fullEquipment) {
 				if (members[h].task !== "Territory Warfare")
 					ns.run("/gang/setMemberTask.js", 1, members[h].name, "Territory Warfare")
 			} else {
 				let task;
-				if (infoGang.territory > 0.25 || 0 > (h - 5))
+				if (infoGang.power > 20000 || 0 > (h - 5))
 					task = "Human Trafficking"
 				else
 					task = "Run a Con"
@@ -52,6 +56,6 @@ export async function main(ns) {
 			}
 		}
 	} else {
-		g.createGang("Slum Snakes")
+		ns.gang.createGang("Slum Snakes")
 	}
 }

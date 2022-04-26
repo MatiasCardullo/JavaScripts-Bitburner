@@ -1,4 +1,4 @@
-import { runSafeScript } from "./lib/basicLib.js";
+import { runScript } from "./lib/basicLib.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {

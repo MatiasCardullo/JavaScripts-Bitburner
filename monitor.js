@@ -10,16 +10,18 @@ export async function main(ns) {
 	ns.tail()
 	let loop = false;
 	let count = 0;
-	let input; let selected = "servers";
+	let input; let selected = "all";
 	while (true) {
 		ns.clearLog()
+		ns.print('\n  ' + new Date().toString() + ' - Time since last reset ' + ns.tFormat(ns.getTimeSinceLastAug()) + '\n')
 		input = getInput()
 		if (input != selected)
 			switch (input) {
-				case "market":
 				case "servers":
-				case "augments":
+				case "market":
 				case "gang":
+				case "augments":
+				case "all":
 					selected = input;
 					break;
 				case "loop":
@@ -38,10 +40,10 @@ export async function main(ns) {
 					selected = "market"
 					break;
 				case 2:
-					selected = "augments"
+					selected = "gang"
 					break;
 				case 3:
-					selected = "gang"
+					selected = "augments"
 					break;
 				default:
 					count = 0;
@@ -49,17 +51,21 @@ export async function main(ns) {
 			}
 		}
 		switch (selected) {
-			case "servers":
+			case "all":
 				await displayServers(dictionary, input);
-				break;
-			case "market":
 				displayMarket()
-				break;
+				displayGang()
 			case "augments":
 				if (input == "rep")
 					displayAugments(2)
 				else
 					displayAugments()
+				break;
+			case "servers":
+				await displayServers(dictionary, input);
+				break;
+			case "market":
+				displayMarket()
 				break;
 			case "gang":
 				displayGang()
@@ -160,7 +166,7 @@ export async function main(ns) {
 			let boxHeight = hackedServers.length + 5;
 			if (showServer > 0 && showServer < hackedServers.length - 1)
 				boxHeight++
-			display = Graph.concatGraphs(display, Graph.box(100, boxHeight))//,Graph.graphBar(hackedServers.length + 3, incomeArray).split('\n')))
+			display = Graph.concatGraphs(display, Graph.box(100, boxHeight, ["fluctuation graph not implemented yet"], 'center'))//,Graph.graphBar(hackedServers.length + 3, incomeArray).split('\n')))
 		} else {
 			myTable.push([`${myServers.length}/25 Purchased Servers`, "", "", "Total Income: ".padStart(50, ' '), ns.nFormat(totalIncome, '0.000 a')])
 			display = Graph.table(myTable, "both", ["right", "center", "center", "center", "right"])
@@ -227,8 +233,9 @@ export async function main(ns) {
 		let total = 0;
 		let maxLength = 40;
 		let company;
-		if (Array.isArray(symbols)) {
-			let data = [["Company", "Price", "Volatility", "Forecast", "Max Shares", "My Shares", "Invested"]];
+		let access = [ns.read("/logs/wseAccount.txt"), ns.read("/logs/tixApi.txt"), ns.read("/logs/4SMarketData.txt"), ns.read("/logs/4SMarketDataTixApi.txt")].toString()
+		if (access === "true,true,true,true") {
+			let data = [["Company Name and symbol", "Price", "Volatility", "Forecast", "Max Shares", "My Shares", "Invested"]];
 			for (let i = 0; i < symbols.length; i++) {
 				company = ns.read("/stock/" + symbols[i] + "/name.txt").split(',')[0].padEnd(maxLength + 5 - symbols[i].length, '-') + symbols[i]
 				let aux = [company];
@@ -258,83 +265,111 @@ export async function main(ns) {
 				}
 				data.push(aux)
 			}
-			data.push(["", "", "", "", "", "Total:", ns.nFormat(total, '0.000a')])
-			ns.print(Graph.table(data, "both", "right"))
+			data.push(["Powered by 4Sigma Market Data Feed", "", "", "", "", "   Total:", ns.nFormat(total, '0.000a')])
+			ns.print(Graph.table(data, "both", "center"))
 		} else {
-			ns.print(Graph.box(null, null, "No info from StockMarket"))
+			ns.print(Graph.box(null, null, " No info from StockMarket "))
 		}
 	}
 
 	function displayAugments(sortBy = 1) {
+		let toBuy = ns.read("/logs/augmentsToBuy.txt")
 		let purchased = [["Purchased Augments"]]
 		ns.read("/logs/purchasedAugments.txt").split(',').forEach((p) => purchased.push([p]))
 		let augsTable = Graph.table(purchased, 'first', 'center')
 		let prices = ns.read("/augments/augsPrice.txt").split('\n')
-		let toBuy = ns.read("/logs/augmentsToBuy.txt")
-		let myFactions = ns.read("/logs/factions.txt").replaceAll(' ', '').replace('&', 'And')
+		let p = JSON.parse(ns.read("/logs/playerStats.txt"))
+		let myFactions = p.factions
 		let factionsRep = [["Factions", "Rep", "Favor"]]
-		myFactions.split(',').forEach(function (f) {
-			let rep = ns.read("/factions/" + f + "/reputation.txt")
-			let fav = ns.read("/factions/" + f + "/favor.txt")
+		myFactions.forEach(function (f) {
+			let fac = f.replaceAll(' ', '').replace('&', 'And')
+			let rep = ns.read("/factions/" + fac + "/reputation.txt")
+			let fav = ns.read("/factions/" + fac + "/favor.txt")
 			try {
+				if (f == p.currentWorkFactionName)
+					rep = parseFloat(rep) + p.workRepGained
 				factionsRep.push([f, ns.nFormat(rep, '0.0a'), ns.nFormat(fav, '0.0a')])
 			} catch { }
 		})
 		let factionTable = Graph.table(factionsRep, 'first', 'center')
 		ns.print(Graph.concatGraphs(factionTable, augsTable))
-		try {
-			if (toBuy != "") {
-				toBuy = toBuy.split(',')
-				let output = [];
-				for (let i in toBuy) {
-					let line = [];
-					prices.forEach((a) => a.includes(toBuy[i]) ? line = a.split(',') : null)
-					if (line.length > 0) {
-						let factions = []
-						ns.ls("home", "/augments.txt").forEach((f) => ns.read(f).includes(toBuy[i]) ? factions.push(f) : null)
-						for (let j in factions) {
-							factions[j] = factions[j].split('/')[2]
-						}
-						line.push(factions)
-						output.push(line)
-					}
+		if (toBuy != "") {
+			toBuy = toBuy.split(',')
+			let output = [];
+			for (let i in toBuy) {
+				let line = [];
+				prices.forEach((a) => a.includes(toBuy[i]) ? line = a.split(',') : null)
+				if (line.length > 0) {
+					let factions = []
+					myFactions.forEach((f) => ns.read("/factions/" + f.replaceAll(' ', '').replace('&', 'And') + "/augments.txt").includes(toBuy[i]) ? factions.push(f) : null)
+					line.push(factions)
+					output.push(line)
 				}
-				let sort = true;
-				while (sort) {
-					sort = false;
-					for (let i = 1; i < output.length; i += 1) {
-						if (parseInt(output[i - 1][sortBy]) > parseInt(output[i][sortBy])) {
-							sort = true;
-							let tmp = output[i - 1];
-							output[i - 1] = output[i];
-							output[i] = tmp;
-						}
-					}
-				}
-				for (let i in output) {
-					output[i][1] = ns.nFormat(output[i][1], '0.0a')
-					output[i][2] = ns.nFormat(output[i][2], '0.0a')
-					let aux = [];
-					output[i][3].forEach(function (e) {
-						if (myFactions.includes(e)) {
-							aux.push(e)
-						}
-					})
-					output[i][3] = aux;
-				}
-				prices[0] = prices[0].split(',')
-				prices[0][0] = "Augments to buy"
-				prices[0].push("Factions with the augment")
-				output.unshift(prices[0])
-				ns.print(Graph.table(output, 'first', 'center'))
 			}
-		} catch {
-
+			let sort = true;
+			while (sort) {
+				sort = false;
+				for (let i = 1; i < output.length; i += 1) {
+					if (parseInt(output[i - 1][sortBy]) > parseInt(output[i][sortBy])) {
+						sort = true;
+						let tmp = output[i - 1];
+						output[i - 1] = output[i];
+						output[i] = tmp;
+					}
+				}
+			}
+			for (let i in output) {
+				output[i][1] = ns.nFormat(output[i][1], '0.0a')
+				output[i][2] = ns.nFormat(output[i][2], '0.0a')
+				let aux = [];
+				output[i][3].forEach(function (e) {
+					if (myFactions.includes(e)) {
+						aux.push(e)
+					}
+				})
+				output[i][3] = aux;
+			}
+			prices[0] = prices[0].split(',')
+			prices[0][0] = "Augments to buy"
+			prices[0].push("Factions with the augment")
+			output.unshift(prices[0])
+			ns.print(Graph.table(output, 'first', 'center'))
+		} else {
+			ns.print(Graph.box(null, null, " No augments to buy yet "))
 		}
 	}
 
-	function displayGang(){
-		ns.print(ns.read("/gang/otherGangs.txt"))
-		ns.print(ns.read("/gang/info.txt"))
+	function displayGang() {
+		let myGang = ns.read("/gang/info.txt")
+		let gangs = ns.read("/gang/otherGangs.txt")
+		if (myGang != "" && gangs != "") {
+			myGang = JSON.parse(myGang)
+			gangs = JSON.parse(gangs)
+			let myGangTable = []
+			for (let key in myGang) {
+				if (key !== 'faction' && key !== 'power' && key !== 'territory' && key !== 'chance') {
+					/*if(!isNaN(myGang[key]))
+						myGang[key]=ns.nFormat(parseFloat(myGang[key]),'0.000 a')*/
+					myGangTable.push([key, myGang[key]])
+				}
+			}
+			let gangsTable = [["Names", "Power", "Territory", "ChanceToWinClash"]]
+			for (let g in gangs) {
+				let aux = [g]
+				aux.push(parseInt(gangs[g].power))
+				aux.push(parseFloat(gangs[g].territory * 100).toFixed(4) + '%')
+				g == myGang.faction ? aux.push('-') : aux.push(parseFloat(gangs[g].chance * 100).toFixed(5) + '%')
+				gangsTable.push(aux)
+			}
+			let output = [[myGang.faction.toUpperCase(), "GANGS TERRITORIAL INFO"]]
+			myGangTable = Graph.table(myGangTable, 'none', 'center').split('\n')
+			gangsTable = Graph.table(gangsTable, 'first', 'center').split('\n')
+			for (let i = 0; i < myGangTable.length; i++) {
+				output.push([myGangTable[i], gangsTable[i]])
+			}
+			ns.print(Graph.table(output, 'first', 'center'))
+		} else {
+			ns.print(Graph.box(null, null, " No gangs yet "))
+		}
 	}
 }

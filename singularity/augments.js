@@ -1,5 +1,4 @@
 import { runSafeScript, runScript } from "./lib/basicLib.js";
-import { speak } from "./lib/voice.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -7,12 +6,13 @@ export async function main(ns) {
 	//ns.disableLog('sleep')
 	ns.disableLog('run')
 	await runScript(ns, "/singularity/getMyAugments.js")
-	let player = ns.getPlayer()
-	let favor = 75;
+	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
+	let myServers = ns.read("myServers.txt").split(',').length
+	let favor = 150;
 	var pathFaction; var pathAugment;
 	let comp = []; let fact = []; let crime = []; let hak = []; let other = [];
-	let count = 1 + Math.ceil(player.hacking / 3000); let augments; let focus = true; var maxPrice = 0; var minPrice = null;
-	let special = [/*"The Red Pill",*/ "Neuroreceptor Management Implant", "CashRoot Starter Kit", "BitRunners Neurolink"];
+	let count = Math.ceil(player.hacking / 3000); let augments; let focus = true; var maxPrice = 0; var minPrice = null; var first = null;
+	let special = ["The Red Pill", "Neuroreceptor Management Implant", "CashRoot Starter Kit", "BitRunners Neurolink"];
 	let toBuy = []
 	let installed = ns.read("/logs/installedAugments.txt").split(',')
 	let purchased = ns.read("/logs/purchasedAugments.txt").split(',')
@@ -20,7 +20,6 @@ export async function main(ns) {
 	if (installed.includes("Neuroreceptor Management Implant"))
 		focus = false
 	let factions = player.factions
-	await ns.write("/logs/factions.txt", factions, 'w')
 	let getRepComp = false;
 	let companyFactions = ["MegaCorp", "ECorp", "Clarke Incorporated", "Bachman & Associates", "NWO", "KuaiGong International",
 		"Four Sigma", "Blade Industries", "OmniTek Incorporated", "Fulcrum Secret Technologies"]
@@ -28,45 +27,45 @@ export async function main(ns) {
 		"Slum Snakes", "Tetrads", "Silhouette", "Speakers for the Dead", "The Dark Army",
 		"The Syndicate", "The Covenant", "Daedalus", "Illuminati"].concat(companyFactions)
 	for (let h = 0; h < companyFactions.length; h++) {
-		if (!factions.includes(companyFactions[h])) {
+		if (!player.factions.includes(companyFactions[h])) {
 			getRepComp = true; break;
 		}
 	}
-	for (let h = 0; h < factions.length; h++) {
-		await runScript(ns, "/singularity/factionsRep.js", factions[h]);
-		await runScript(ns, "/singularity/factionsFavor.js", factions[h]);
-		pathFaction = "/factions/" + factions[h].replaceAll(' ', '').replace('&', 'And') + "/augments.txt"
+	for (let h = 0; h < player.factions.length; h++) {
+		await runScript(ns, "/factions/getRep.js", factions[h]);
+		await runScript(ns, "/factions/getFavor.js", factions[h]);
+		pathFaction = "/factions/" + player.factions[h].replaceAll(' ', '').replace('&', 'And') + "/augments.txt"
 		augments = ns.read(pathFaction)
 		if (augments == "") {
-			await runSafeScript(ns, "/singularity/factionsAugments.js", factions[h]);
+			await runSafeScript(ns, "/singularity/factionsAugments.js", player.factions[h]);
 		}
 		augments = augments.split(',')
 		for (let i = 0; i < augments.length; i++) {
 			pathAugment = "/augments/" + augments[i].replaceAll(' ', '').replace("'", '').replace("(S.N.A)", "") + ".txt";
 			let data = ns.read(pathAugment)
 			if (data == "") {
-				await runSafeScript(ns, "/singularity/augmentationStats.js", augments[i])
+				await runSafeScript(ns, "/augments/getStats.js", augments[i])
 				data = ns.read(pathAugment)
 			}
 			if (!ownAugments.includes(augments[i]) && "NeuroFlux Governor" != augments[i]) {
 				if (special.includes(augments[i])) {
-					await buyLoop([[factions[h], augments[i]]], true); continue;
+					await buyLoop([[player.factions[h], augments[i]]], true); continue;
 				}
 				if (data != "") {
 					//ns.tprint(data[j])
 					if (getRepComp && (data.includes("charisma") || data.includes("compan"))) {
-						comp.push([factions[h], augments[i]])
+						comp.push([player.factions[h], augments[i]])
 					} else if (data.includes("faction")) {
-						fact.push([factions[h], augments[i]])
+						fact.push([player.factions[h], augments[i]])
 					} else if (data.includes("crime")) {
-						crime.push([factions[h], augments[i]])
+						crime.push([player.factions[h], augments[i]])
 					} else if (data.includes("weak") || data.includes("grow") || (data.includes("hack") && !data.includes("hacknet"))) {
-						hak.push([factions[h], augments[i]])
+						hak.push([player.factions[h], augments[i]])
 					} else {
-						other.push([factions[h], augments[i]])
+						other.push([player.factions[h], augments[i]])
 					}
 				} else {
-					other.push([factions[h], augments[i]])
+					other.push([player.factions[h], augments[i]])
 				}
 			}
 		}
@@ -79,8 +78,6 @@ export async function main(ns) {
 	if (buyOther) {
 		await buyLoop(other);
 	}
-	await ns.write("/logs/maxPrice.txt", maxPrice, 'w')
-	await ns.write("/logs/minPrice.txt", minPrice, 'w')
 	let install = 0;
 	for (let i = 0; i < purchased.length; i++) {
 		if (special.includes(purchased[i])) {
@@ -88,17 +85,14 @@ export async function main(ns) {
 		}
 		pathAugment = "/augments/" + purchased[i].replaceAll(' ', '').replace("'", '').replace("(S.N.A)", "") + ".txt";
 		let data = ns.read(pathAugment);
-		if (data.includes("rep") || data.includes("weak") || data.includes("grow") || (data.includes("hack") && !data.includes("hacknet"))) {
+		if (data.includes("rep") || data.includes("crime") || data.includes("weak") || data.includes("grow") || (data.includes("hack") && !data.includes("hacknet"))) {
 			install++;
 		}
-		if (data.includes("crime") || data.includes("charisma")) {
-			install+=1001/3000;
-		}
-		//ns.tprint(install)
+		//ns.tprint(install+' '+count)
 		if (install >= count)
 			break;
 	}
-	if (install >= count || (toBuy.length == 0 && factions.includes("Illuminati"))) {
+	if (install >= count || (toBuy.length == 0 && player.factions.includes("Illuminati") || purchased.includes("The Red Pill"))) {
 		let pid; let notScript = false;
 		ns.kill("all.js", "home", true)
 		if (ns.kill("/stock/market.js", "home")) {
@@ -112,19 +106,18 @@ export async function main(ns) {
 		pid = ns.read("/stock/_tempStockPid.txt")
 		if (notScript || (pid != "" && !ns.isRunning(parseInt(pid)))) {
 			await buyLoop(other);
-			for (let h = 0; h < factions.length; h++) {
-				pathFaction = "/factions/" + factions[h].replaceAll(' ', '').replace('&', 'And') + "/augments.txt"
+			for (let h = 0; h < player.factions.length; h++) {
+				pathFaction = "/factions/" + player.factions[h].replaceAll(' ', '').replace('&', 'And') + "/augments.txt"
 				augments = ns.read(pathFaction).split(',')
 				for (let i = 0; i < augments.length; i++) {
-					if (ns.purchaseAugmentation(factions[h], augments[i])) {
+					if (ns.singularity.purchaseAugmentation(player.factions[h], augments[i])) {
 						let output = "Purchased " + augments[i] + " from " + factions[h]
-						speak(output, 11)
 						ns.toast(output, "success", 60000)
 					}
 				}
 			}
-			for (let h = 0; h < factions.length; h++)
-				while (ns.purchaseAugmentation(factions[h], "NeuroFlux Governor")) { }
+			for (let h = 0; h < player.factions.length; h++)
+				while (ns.singularity.purchaseAugmentation(player.factions[h], "NeuroFlux Governor")) { }
 			ns.run("/singularity/installAugs.js")
 		}
 	}
@@ -136,45 +129,48 @@ export async function main(ns) {
 		}
 
 	}
+	await ns.write("/logs/maxPrice.txt", maxPrice, 'w')
+	await ns.write("/logs/minPrice.txt", minPrice, 'w')
+	await ns.write("/logs/firstAugment.txt", first, 'w')
 	await ns.write("/logs/augmentsToBuy.txt", toBuy, 'w')
 
 	async function buyLoop(array = []) {
-		let file = ns.read("/augments/augsPrice.txt"); let augsPrice;
+		await runSafeScript(ns, "/augments/getPrice.js")
+		let augsPrice = ns.read("/augments/augsPrice.txt").split('\n');
 		for (let i = 0; i < array.length; i++) {
-			if (!file.includes(array[i][1])) {
-				//ns.tprint(array[i][1])
-				await runSafeScript(ns, "/singularity/augmentationPrice.js")
-			}
-			augsPrice = file.split('\n')
 			let aux = augsPrice.filter((a) => a.includes(array[i][1])).toString().split(',')
-			let augPrice = parseInt(aux[1]); let augRep = parseFloat(aux[2]);
+			let augPrice = parseFloat(aux[1]);
+			if (augPrice > maxPrice)
+				maxPrice = augPrice;
+			if (minPrice == null || minPrice > augPrice) {
+				first = array[i][1]
+				minPrice = augPrice;
+			}
+		}
+		for (let i = 0; i < array.length; i++) {
+			await runSafeScript(ns, "getPlayer.js")
+			player = JSON.parse(ns.read("/logs/playerStats.txt"))
+			let aux = augsPrice.filter((a) => a.includes(array[i][1])).toString().split(',')
+			let augPrice = parseFloat(aux[1]); let augRep = parseFloat(aux[2]);
 			let path = "/factions/" + array[i][0].replaceAll(' ', '').replace('&', 'And');
 			let factionRep = parseFloat(ns.read(path + "/reputation.txt"));
 			let factionFavor = parseFloat(ns.read(path + "/favor.txt"));
-
-			if (augPrice > maxPrice)
-				maxPrice = augPrice;
-			if (minPrice == null || minPrice > augPrice)
-				minPrice = augPrice;
-			if (factionRep < augRep) {
-				if (factionFavor > favor && augPrice < player.money && ns.read("myServers.txt").split(',').length == 25)
-					await runScript(ns, "/singularity/donateFaction.js", array[i][0], player.money - augPrice);
+			if (factionRep < augRep && (myServers == 25 || ns.read("/logs/firstAugment.txt") == array[i][1])) {
+				if (factionFavor > favor && augPrice < player.money)
+					await runSafeScript(ns, "/singularity/donateFaction.js", array[i][0], player.money - augPrice * (1 + purchased.length));
 				if (!player.isWorking) {
-					await runScript(ns, "/singularity/workForFaction.js", array[i][0], "hacking", focus);
+					await runSafeScript(ns, "/singularity/workForFaction.js", array[i][0], focus);
 				} else if (player.workType == "Working for Faction") {
-					if (player.currentWorkFactionName == array[i][0] && factionRep + player.workRepGained >= augRep)
-						ns.stopAction();
-					if (player.currentWorkFactionName !== array[i][0] &&
-						factionRep > parseFloat(ns.read("/factions/" + player.currentWorkFactionName.replaceAll(' ', '').replace('&', 'And') + "/reputation.txt")) + player.workRepGained)
-						await runScript(ns, "/singularity/workForFaction.js", array[i][0], "hacking", focus);
+					if (player.currentWorkFactionName == array[i][0] && (factionRep + player.workRepGained >= augRep /*|| minPrice !== augPrice*/))
+						ns.singularity.stopAction();
+					if (player.currentWorkFactionName !== array[i][0] && factionFavor < favor &&
+						factionRep < parseFloat(ns.read("/factions/" + player.currentWorkFactionName.replaceAll(' ', '').replace('&', 'And') + "/reputation.txt")) + player.workRepGained)
+						await runSafeScript(ns, "/singularity/workForFaction.js", array[i][0], "hacking", focus);
 				}
 			}
-			if (ns.purchaseAugmentation(array[i][0], array[i][1])) {
-				let output = "Purchased " + array[i][1] + " from " + array[i][0]
-				speak(output, 11)
-				ns.toast(output, "success", 60000)
-			} else if (!toBuy.includes(array[i][1]))
+			if (!toBuy.includes(array[i][1]))
 				toBuy.push(array[i][1])
+			await runSafeScript(ns, "/singularity/purchaseAugmentation.js", array[i][0], array[i][1])
 		}
 	}
 }

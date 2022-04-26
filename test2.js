@@ -1,4 +1,13 @@
 /** @param {NS} ns */
 export async function main(ns) {
-	await ns.write("cc.txt",JSON.stringify(ns.codingcontract.attempt),'w')
+	ns.tprint(asd())
+	ns.tprint(asd.toPrint())
+	
+	function asd() {
+		return ["asd", "qwe", "zxc"]
+	}
+
+	asd.prototype.toPrint = function () {
+		return asd().toString().replace(',', '\n')
+	}
 }

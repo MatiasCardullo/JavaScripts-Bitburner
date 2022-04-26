@@ -1,4 +1,4 @@
 /** @param {NS} ns */
 export async function main(ns) {
-	ns.stock.purchase4SMarketDataTixApi()
+	try { ns.stock.purchase4SMarketDataTixApi() } catch { }
 }
