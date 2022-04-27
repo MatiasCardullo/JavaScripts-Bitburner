@@ -12,7 +12,7 @@ export async function main(ns) {
 	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
 	let focus; let companyRep; let faction;
 	let maxRep = 200000
-	if (player.hacking >= 250&&!player.inBladeburner) {
+	if (player.hacking >= 250) {
 		for (let i = 0; i < companies.length; i++) {
 			faction = companies[i]
 			if (companies[i] == "Fulcrum Technologies") {

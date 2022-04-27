@@ -13,11 +13,12 @@ export async function main(ns) {
 		new Audio("data:audio/wav;base64," + _beep),
 		new Audio("data:audio/wav;base64," + _coplandOsEnterprise),
 	]
-	await runScript(ns, "reset.js")
+	await runSafeScript(ns, "reset.js")
+	await runScript(ns, "getPlayer.js")
 	if (scaner == null)
 		scaner = await ns.prompt("Start Scan")
 	if (scaner)
-		await runSafeScript(ns, "startScan.js")
+		await runScript(ns, "startScan.js")
 	if (singularity == null)
 		singularity = await ns.prompt("You have the singularity?")
 	if (singularity) {
@@ -26,17 +27,20 @@ export async function main(ns) {
 		await runScript(ns, "/singularity/getCrimeStats.js")
 		if (doCrime == null)
 			doCrime = await ns.prompt("Do Crime?")
-		if (getGang == null)
+		if (getGang == null) {
 			getGang = await ns.prompt("Do you want to form a gang?")
+			setGang = getGang
+		}
 		await runSafeScript(ns, "/gang/getMembersInformation.js")
 		let arrayMembers = ns.read("/gang/membersInfo.txt")
-		if (arrayMembers != "") {
+		try {
 			arrayMembers = JSON.parse(arrayMembers)
 			if (arrayMembers.length == 12)
 				for (let i in arrayMembers)
 					await runSafeScript(ns, "/gang/ascendMember.js", arrayMembers[i].name)
-		}
+		} catch { }
 	} else {
+		doCrime = false;
 		getGang = false;
 		setGang = false;
 	}

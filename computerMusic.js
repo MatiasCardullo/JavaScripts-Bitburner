@@ -127,6 +127,7 @@ export async function main(ns) {
 				}
 				wait++;
 				if (!song.paused) {
+					song.volume=volume
 					min = Math.floor(song.currentTime / 60)
 					seg = Math.floor(song.currentTime - 60 * min)
 					if (seg < 10)

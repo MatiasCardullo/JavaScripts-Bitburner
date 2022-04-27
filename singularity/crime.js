@@ -1,14 +1,27 @@
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL')
+	ns.run("getPlayer.js")
 	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
-	if (!player.isWorking || player.workType == "Working for Faction") {
+	if ((!player.isWorking || player.workType == "Working for Faction") /*&& player.location == "The Slums"*/) {
 		let getGang = ns.args[0]
 		let loop = ns.args[1]
 		var crimes = JSON.parse(ns.read("/logs/crimeStats.txt"))
 		var money = new Array(crimes.length);
+		let bestKarma = 0;
 		for (let i = 0; i < crimes.length; i++) {
 			money[i] = crimes[i].money / crimes[i].time
+		}
+		if (getGang) {
+			let aux;let index;
+			for (let i = 0; i < crimes.length; i++) {
+				aux = crimes[i].karma / crimes[i].time
+				if(aux>bestKarma){
+					bestKarma=aux
+					index=i
+				}
+			}
+			bestKarma=index
 		}
 		do {
 			ns.clearLog()
@@ -19,7 +32,7 @@ export async function main(ns) {
 			} else {
 				ns.toast(info, 'info')
 			}
-			let time = ns.singularity.commitCrime(selectCrime(ns, crimes, money, getGang))
+			let time = ns.singularity.commitCrime(selectCrime(ns, crimes, money, getGang, bestKarma))
 			await ns.sleep(time - 500)
 		} while (loop)
 	}
@@ -27,7 +40,8 @@ export async function main(ns) {
 }
 
 /** @param {NS} ns **/
-export function selectCrime(ns, crimes, money, getGang = false) {
+export function selectCrime(ns, crimes, money, getGang = false,k) {
+	ns.run("getPlayer.js")
 	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
 	let chance = new Array(crimes.length);
 	let maxChance; let maxMoney; let index;
@@ -42,9 +56,9 @@ export function selectCrime(ns, crimes, money, getGang = false) {
 			player.crime_success_mult * (1 + Math.pow(player.intelligence, 0.8) / 600);
 		//ns.print(chance[i])
 	}
-	if (chance[6] > 0.90) {
-		if ((getGang && -54000 < ns.heart.break()) || player.numPeopleKilled < 30)
-			return "Homicide"
+	if (chance[k] > 0.90) {
+		if (getGang && (-54000 < ns.heart.break() || player.numPeopleKilled < 30))
+			return crimes[k].name
 	}
 	maxChance = 0; maxMoney = 0;
 	for (let i = crimes.length - 1; i > -1; i--) {

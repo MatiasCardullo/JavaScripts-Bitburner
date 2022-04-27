@@ -12,9 +12,9 @@ export async function main(ns) {
 	let serversWithMoneyWithoutRam = servers[3];
 	var serverMaxOut = [];
 	var singularity = ns.args[0]
-	var doCrime = ns.args[1]
-	var getGang = ns.args[2]
-	var setGang = ns.args[3]
+	let doCrime = ns.args[1]
+	let getGang = ns.args[2]
+	let setGang = ns.args[3]
 	var homeRAM;
 	var b = false, f = false, r = false, h = false, s = false;
 	let minPorts = [0, 50000, 50000, 50000, 50000, 50000];
@@ -37,6 +37,8 @@ export async function main(ns) {
 	ns.tail()
 	let ramServer;
 	while (true) {
+		await execSafeScript(ns, "getPlayer.js")
+		let player = JSON.parse(ns.read("/logs/playerStats.txt"))
 		let myServers = ns.read("myServers.txt").split(',')
 		homeRAM = ns.getServerMaxRam("home")
 		if (homeRAM > 1024) {
@@ -61,15 +63,20 @@ export async function main(ns) {
 				await execSafeScript(ns, "/singularity/upgradeHomeRAM.js");
 				await execScript(ns, "/singularity/upgradeHomeRAMCost.js");
 			}
-			if (ns.read("/logs/minPrice.txt") == "null" || ns.getServerMoneyAvailable("home") < parseFloat(ns.read("/logs/minPrice.txt"))) {
-				if (doCrime && myServers.length < 25) {
-					let pid;
-					if (doCrime)
-						pid = ns.exec("/singularity/crime.js", "home", 1, getGang, false);
+			if ((getGang && ns.read("/gang/info.txt") == "") || ns.read("/logs/minPrice.txt") == "null"
+				|| ns.getServerMoneyAvailable("home") < parseFloat(ns.read("/logs/minPrice.txt"))) {
+				if ((doCrime && myServers.length < 25) || (getGang && ns.read("/gang/info.txt") == "")) {
+					let pid = ns.exec("/singularity/crime.js", "home", 1, getGang, false);
 					while (homeRAM < 64 && ns.isRunning(pid)) { await ns.sleep(0) }
 				} else {
 					await execScript(ns, "/singularity/company.js")
 				}
+			}
+			if (ns.read("/gang/info.txt") !== "") {
+				if (player.inBladeburner)
+					await execSafeScript(ns, "/bladeburner/manager.js");
+				else
+					await execScript(ns, "/bladeburner/join.js");
 			}
 			await execSafeScript(ns, "/singularity/joinFactions.js")
 			await execSafeScript(ns, "/singularity/augments.js");

@@ -3,7 +3,6 @@ import { runSafeScript, runScript } from "./lib/basicLib.js";
 /** @param {NS} ns **/
 export async function main(ns) {
 	//ns.tail()
-	//ns.disableLog('sleep')
 	ns.disableLog('run')
 	await runScript(ns, "/singularity/getMyAugments.js")
 	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
@@ -11,7 +10,10 @@ export async function main(ns) {
 	let favor = 150;
 	var pathFaction; var pathAugment;
 	let comp = []; let fact = []; let crime = []; let hak = []; let other = [];
-	let count = Math.ceil(player.hacking / 3000); let augments; let focus = true; var maxPrice = 0; var minPrice = null; var first = null;
+	let count = 0;
+	if (myServers == 25)
+		count++
+	count += Math.ceil(player.hacking / 3000); let augments; let focus = true; var maxPrice = 0; var minPrice = null; var first = null;
 	let special = ["The Red Pill", "Neuroreceptor Management Implant", "CashRoot Starter Kit", "BitRunners Neurolink"];
 	let toBuy = []
 	let installed = ns.read("/logs/installedAugments.txt").split(',')
@@ -158,7 +160,7 @@ export async function main(ns) {
 			if (factionRep < augRep && (myServers == 25 || ns.read("/logs/firstAugment.txt") == array[i][1])) {
 				if (factionFavor > favor && augPrice < player.money)
 					await runSafeScript(ns, "/singularity/donateFaction.js", array[i][0], player.money - augPrice * (1 + purchased.length));
-				if (!player.isWorking) {
+				if (!player.isWorking && !player.inBladeburner) {
 					await runSafeScript(ns, "/singularity/workForFaction.js", array[i][0], focus);
 				} else if (player.workType == "Working for Faction") {
 					if (player.currentWorkFactionName == array[i][0] && (factionRep + player.workRepGained >= augRep /*|| minPrice !== augPrice*/))

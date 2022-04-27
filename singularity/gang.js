@@ -41,10 +41,10 @@ export async function main(ns) {
 					ns.run("/gang/setMemberTask.js", 1, members[h].name, "Territory Warfare")
 			} else {
 				let task;
-				if (infoGang.power > 20000 || 0 > (h - 5))
+				if (infoGang.power > 20000 )
 					task = "Human Trafficking"
 				else
-					task = "Run a Con"
+					task = "Deal Drugs"
 				/*if (infoGang.wantedLevel < 2 && members[h].task !== "Cyberterrorism")
 					await runScript(ns, "/gang/setMemberTask.js", members[h].name, "Cyberterrorism")
 				if (infoGang.wantedLevel > 2 && members[h].task !== "Vigilante Justice")
