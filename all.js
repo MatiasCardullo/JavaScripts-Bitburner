@@ -68,7 +68,7 @@ export async function main(ns) {
 				if ((doCrime && myServers.length < 25) || (getGang && ns.read("/gang/info.txt") == "")) {
 					let pid = ns.exec("/singularity/crime.js", "home", 1, getGang, false);
 					while (homeRAM < 64 && ns.isRunning(pid)) { await ns.sleep(0) }
-				} else {
+				} else if(!player.inBladeburner){
 					await execScript(ns, "/singularity/company.js")
 				}
 			}

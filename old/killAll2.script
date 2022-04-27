@@ -1,4 +1,0 @@
-hackServer = args[0];
-servers = getPurchasedServers()
-for (var i = 0; i < servers.length; i++) 
-	killall(servers[i])

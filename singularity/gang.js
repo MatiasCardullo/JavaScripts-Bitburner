@@ -29,9 +29,9 @@ export async function main(ns) {
 		let fullEquipment = true
 		for (let h = 0; h < members.length; h++) {
 			for (let i = 0; i < equipment.length; i++) {
-				if (members[h].upgrades.includes(equipment[i].name)||members[h].augmentations.includes(equipment[i].name)) {
+				if (members[h].upgrades.includes(equipment[i].name) || members[h].augmentations.includes(equipment[i].name)) {
 					continue;
-				} else if (serversBought) {
+				} else {
 					fullEquipment = false;
 					await runScript(ns, "/gang/purchaseEquipment.js", members[h].name, equipment[i].name);
 				}
@@ -43,6 +43,8 @@ export async function main(ns) {
 				let task;
 				if (infoGang.power > 20000 )
 					task = "Human Trafficking"
+				else if(h + 3 < members.length)
+					task = "Run a Con"
 				else
 					task = "Deal Drugs"
 				/*if (infoGang.wantedLevel < 2 && members[h].task !== "Cyberterrorism")

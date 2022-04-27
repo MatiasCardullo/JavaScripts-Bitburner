@@ -28,7 +28,7 @@ export async function main(ns) {
 	let allFactions = ["CyberSec", "Tian Di Hui", "Chongqing", "New Tokyo", "Ishima", "Sector-12", "Aevum", "Volhaven", "Nitesec", "The Black Hand", "BitRunners",
 		"Slum Snakes", "Tetrads", "Silhouette", "Speakers for the Dead", "The Dark Army",
 		"The Syndicate", "The Covenant", "Daedalus", "Illuminati"].concat(companyFactions)
-	for (let h = 0; h < companyFactions.length; h++) {
+	for (let h = 0; h < companyFactions.length && !player.inBladeburner; h++) {
 		if (!player.factions.includes(companyFactions[h])) {
 			getRepComp = true; break;
 		}

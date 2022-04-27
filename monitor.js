@@ -348,8 +348,8 @@ export async function main(ns) {
 			let myGangTable = []
 			for (let key in myGang) {
 				if (key !== 'faction' && key !== 'power' && key !== 'territory' && key !== 'chance') {
-					/*if(!isNaN(myGang[key]))
-						myGang[key]=ns.nFormat(parseFloat(myGang[key]),'0.000 a')*/
+					if (key !== "isHacking" && key !== "territoryWarfareEngaged")
+						myGang[key] = parseFloat(myGang[key]).toFixed(3)
 					myGangTable.push([key, myGang[key]])
 				}
 			}
