@@ -1,8 +1,10 @@
 /** @param {NS} ns */
 export async function main(ns) {
-	let list = ns.ls("home", ".js")
+	await ns.wget("https://raw.githubusercontent.com/MatiasCardullo/JavaScripts-Bitburner/main/scripts.txt", "/logs/scripts.txt")
+	let list = ns.read("/logs/scripts.txt").split('\n')
+	let auxList = []
 	for (let i in list) {
-		list[i].startsWith('/') ? list[i] = list[i].slice(1) : null
-		ns.tprint("https://raw.githubusercontent.com/MatiasCardullo/JavaScripts-Bitburner/main/" + list[i]/*, f*/)
+		list[i].startsWith('/') ? auxList[i] = list[i].slice(1) : auxList[i] = list[i]
+		await ns.wget("https://raw.githubusercontent.com/MatiasCardullo/JavaScripts-Bitburner/main/" + auxList[i], list[i])
 	}
 }
