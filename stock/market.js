@@ -1,6 +1,7 @@
 // Built upon u/pwillia7 's stock script.
 // u/ferrus_aub stock script using simple portfolio algorithm.
 import { runSafeScript, runScript } from "./lib/basicLib.js";
+import { speak } from "./sounds/voice.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -11,20 +12,23 @@ export async function main(ns) {
     let access = [false, false, false, false];
     var minSharePer = 5
     let onlySell = ns.args[0]
+    let itSell=false
     ns.disableLog('sleep');
     ns.disableLog('run');
     ns.disableLog('getServerMoneyAvailable');
-    if (onlySell != true) {
-        await ns.sleep(15000)
-    }
+    await ns.sleep(15000)
     while (true) {
         await runSafeScript(ns, "getPlayer.js")
         p = JSON.parse(ns.read("/logs/playerStats.txt"))
-        access = [p.hasWseAccount, p.hastixApiAccess, p.has4SData, p.has4SDataTixApi]
+        /*"hasWseAccount": true,
+        "hasTixApiAccess": true,
+        "has4SData": true,
+        "has4SDataTixApi": true,*/
+        access = [p.hasWseAccount, p.hasTixApiAccess, p.has4SData, p.has4SDataTixApi]
         //ns.tprint(access)
-        if (access.toString() === "true,true,true,true") {
+        if (access.toString() == "true,true,true,true") {
             moneyMin = 500000000
-            moneyMax = parseFloat(ns.read("/logs/minPrice.txt"))+moneyMin
+            moneyMax = parseFloat(ns.read("/logs/minPrice.txt")) + moneyMin
             let empty = true;
             let stocks = ns.read("/stock/symbols.txt").split(',')
             if (ns.read("/stock/symbols.txt") == "") {
@@ -46,6 +50,10 @@ export async function main(ns) {
                         ns.toast("stockTest:getPosition", 'error')
                         ns.exit()
                     }
+                }
+                if(itSell){
+                    speak("StockMarket",11)
+                    itSell=false
                 }
                 if (empty && onlySell) {
                     ns.exit()
@@ -76,7 +84,7 @@ export async function main(ns) {
             await runScript(ns, "/stock/getMaxShares.js", stok)
             await runScript(ns, "/stock/getAskPrice.js", stok)
             await runScript(ns, "/stock/getForecast.js", stok)
-            await runScript(ns, "/stock/getVolatility.js", stok)
+            await runSafeScript(ns, "/stock/getVolatility.js", stok)
             let maxShares = parseFloat(ns.read("/stock/" + stok + "/maxShares.txt")) * maxSharePer - shares
             let askPrice = parseFloat(ns.read("/stock/" + stok + "/price.txt"))
             let forecast = parseFloat(ns.read("/stock/" + stok + "/forecast.txt"))
@@ -99,6 +107,7 @@ export async function main(ns) {
             await runSafeScript(ns, "/stock/getForecast.js", stok)
             let forecast = parseFloat(ns.read("/stock/" + stok + "/forecast.txt"))
             if (forecast < 0.5) {
+                itSell=true
                 await runScript(ns, "/stock/sell.js", stok, position[0])
                 ns.print('Sold ' + stok + ': ' + position[0])
                 await runScript(ns, "/stock/sell.js", stok, position[2])

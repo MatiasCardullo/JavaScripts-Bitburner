@@ -2,7 +2,7 @@
 export async function main(ns) {
 	let scaner = true;
 	let singularity = true;
-	let doCrime = false;
+	let doCrime = true;
 	let getGang;
 	let setGang;
 	try {

@@ -3,22 +3,24 @@ import { runSafeScript, runScript } from "./lib/basicLib.js";
 /** @param {NS} ns **/
 export async function main(ns) {
 	//ns.tail()
-	ns.disableLog('run')
+	//ns.disableLog('run')
+	ns.disableLog('sleep')
 	await runScript(ns, "/singularity/getMyAugments.js")
 	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
 	let myServers = ns.read("myServers.txt").split(',').length
 	let favor = 150;
 	var pathFaction; var pathAugment;
-	let comp = []; let fact = []; let crime = []; let hak = []; let other = [];
+	let bb = []; let comp = []; let fact = []; let crime = []; let hak = []; let other = [];
 	let count = 0;
 	if (myServers == 25)
 		count++
 	count += Math.ceil(player.hacking / 3000); let augments; let focus = true; var maxPrice = 0; var minPrice = null; var first = null;
-	let special = ["The Red Pill", "Neuroreceptor Management Implant", "CashRoot Starter Kit", "BitRunners Neurolink"];
+	let special = ["The Red Pill", "Neuroreceptor Management Implant", "CashRoot Starter Kit", "BitRunners Neurolink", "The Blade's Simulacrum"];
 	let toBuy = []
 	let installed = ns.read("/logs/installedAugments.txt").split(',')
 	let purchased = ns.read("/logs/purchasedAugments.txt").split(',')
 	var ownAugments = installed.concat(purchased)
+	let bbDecision = !player.inBladeburner || (player.inBladeburner && installed.includes("The Blade's Simulacrum"))
 	if (installed.includes("Neuroreceptor Management Implant"))
 		focus = false
 	let factions = player.factions
@@ -28,8 +30,10 @@ export async function main(ns) {
 	let allFactions = ["CyberSec", "Tian Di Hui", "Chongqing", "New Tokyo", "Ishima", "Sector-12", "Aevum", "Volhaven", "Nitesec", "The Black Hand", "BitRunners",
 		"Slum Snakes", "Tetrads", "Silhouette", "Speakers for the Dead", "The Dark Army",
 		"The Syndicate", "The Covenant", "Daedalus", "Illuminati"].concat(companyFactions)
-	for (let h = 0; h < companyFactions.length && !player.inBladeburner; h++) {
-		if (!player.factions.includes(companyFactions[h])) {
+	for (let h = 0; h < companyFactions.length; h++) {
+		if (!bbDecision) {
+			break;
+		} else if (!player.factions.includes(companyFactions[h])) {
 			getRepComp = true; break;
 		}
 	}
@@ -55,7 +59,9 @@ export async function main(ns) {
 				}
 				if (data != "") {
 					//ns.tprint(data[j])
-					if (getRepComp && (data.includes("charisma") || data.includes("compan"))) {
+					if (player.inBladeburner && player.factions[h] == "Bladeburners") {
+						bb.push([player.factions[h], augments[i]])
+					} else if (getRepComp && (data.includes("charisma") || data.includes("compan"))) {
 						comp.push([player.factions[h], augments[i]])
 					} else if (data.includes("faction")) {
 						fact.push([player.factions[h], augments[i]])
@@ -75,6 +81,10 @@ export async function main(ns) {
 	//ns.tprint(rep.length+" "+crime.length+" "+hak.length)
 	//ns.tprint(other)
 	let aux = comp.concat(fact).concat(hak).concat(crime)//concat(other)
+	if (player.inBladeburner) {
+		aux = bb.concat(aux)
+		//ns.print(aux)
+	}
 	let buyOther = aux.length == 0
 	await buyLoop(aux)
 	if (buyOther) {
@@ -94,13 +104,12 @@ export async function main(ns) {
 		if (install >= count)
 			break;
 	}
-	if (install >= count || (toBuy.length == 0 && player.factions.includes("Illuminati") || purchased.includes("The Red Pill"))) {
+	ns.print(install + ' ' + count)
+	if (install >= count || (toBuy.length == 0 && player.factions.includes("Illuminati")) || purchased.includes("The Red Pill") || purchased.includes("The Blade's Simulacrum")) {
 		let pid; let notScript = false;
-		ns.kill("all.js", "home", true)
+		//ns.kill("all.js", "home", true, true, false, true)
 		if (ns.kill("/stock/market.js", "home")) {
-			do {
-				pid = ns.run("/stock/market.js", 1, true)
-			} while (pid == 0)
+			pid = await runScript(ns, "/stock/market.js", true)
 			await ns.write("/stock/_tempStockPid.txt", pid, 'w')
 		} else if (ns.read("/stock/_tempStockPid.txt") == "") {
 			notScript = true;
@@ -157,22 +166,25 @@ export async function main(ns) {
 			let path = "/factions/" + array[i][0].replaceAll(' ', '').replace('&', 'And');
 			let factionRep = parseFloat(ns.read(path + "/reputation.txt"));
 			let factionFavor = parseFloat(ns.read(path + "/favor.txt"));
-			if (factionRep < augRep && (myServers == 25 || ns.read("/logs/firstAugment.txt") == array[i][1])) {
-				if (factionFavor > favor && augPrice < player.money)
-					await runSafeScript(ns, "/singularity/donateFaction.js", array[i][0], player.money - augPrice * (1 + purchased.length));
-				if (!player.isWorking && !player.inBladeburner) {
-					await runSafeScript(ns, "/singularity/workForFaction.js", array[i][0], focus);
-				} else if (player.workType == "Working for Faction") {
-					if (player.currentWorkFactionName == array[i][0] && (factionRep + player.workRepGained >= augRep /*|| minPrice !== augPrice*/))
-						ns.singularity.stopAction();
-					if (player.currentWorkFactionName !== array[i][0] && factionFavor < favor &&
-						factionRep < parseFloat(ns.read("/factions/" + player.currentWorkFactionName.replaceAll(' ', '').replace('&', 'And') + "/reputation.txt")) + player.workRepGained)
-						await runSafeScript(ns, "/singularity/workForFaction.js", array[i][0], "hacking", focus);
+			if (factionRep < augRep) {
+				if (myServers == 25 || ns.read("/logs/firstAugment.txt") == array[i][1]) {
+					if (factionFavor > favor && augPrice < player.money)
+						await runSafeScript(ns, "/singularity/donateFaction.js", array[i][0], player.money - augPrice * (1 + purchased.length));
+
+					if (!player.isWorking && bbDecision) {
+						await runSafeScript(ns, "/singularity/workForFaction.js", array[i][0], focus);
+					} else if (player.workType == "Working for Faction") {
+						if (player.currentWorkFactionName == array[i][0] && (factionRep + player.workRepGained >= augRep /*|| minPrice !== augPrice*/))
+							ns.singularity.stopAction();
+						if (player.currentWorkFactionName !== array[i][0] && factionFavor < favor && minPrice == augPrice &&
+							factionRep > parseFloat(ns.read("/factions/" + player.currentWorkFactionName.replaceAll(' ', '').replace('&', 'And') + "/reputation.txt")) + player.workRepGained)
+							await runSafeScript(ns, "/singularity/workForFaction.js", array[i][0], "hacking", focus);
+					}
 				}
-			}
+			} else if (augPrice < player.money)
+				await runSafeScript(ns, "/singularity/purchaseAugmentation.js", array[i][0], array[i][1])
 			if (!toBuy.includes(array[i][1]))
 				toBuy.push(array[i][1])
-			await runSafeScript(ns, "/singularity/purchaseAugmentation.js", array[i][0], array[i][1])
 		}
 	}
 }

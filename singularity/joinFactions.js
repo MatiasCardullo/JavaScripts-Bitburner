@@ -3,10 +3,8 @@ import { speak } from "./sounds/voice.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
-	await runSafeScript(ns, "getPlayer.js")
 	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
 	let zones = ["Chongqing", "Sector-12", "Aevum", "New Tokyo", "Ishima", "Volhaven"]
-	await runSafeScript(ns, "/singularity/checkFactionInvitations.js")
 	let invites = ns.read("/logs/invitations.txt").split(',')
 	let ownAugments = ns.read("/logs/installedAugments.txt").split(',')
 	let pathFactionAugments; let augments;
@@ -26,7 +24,7 @@ export async function main(ns) {
 		}
 		if (join) {
 			if (player.city !== zones[h])
-				await runSafeScript(ns, "/singularity/travelToCity.js",zones[h])
+				await runSafeScript(ns, "/singularity/travelToCity.js", zones[h])
 			if (ns.singularity.joinFaction(zones[h])) {
 				speak("Joineed " + zones[h], 11)
 				ns.toast("Joined " + zones[h], "success", 10000)
@@ -37,9 +35,6 @@ export async function main(ns) {
 	for (let h = 0; h < invites.length; h++) {
 		//ns.print(invites[h])
 		if (invites[h] != "" && !zones.includes(invites[h])) {
-			if (invites[h] == "Illuminati") {
-				ns.singularity.stopAction()
-			}
 			if (ns.singularity.joinFaction(invites[h])) {
 				speak("Joineed " + invites[h], 11)
 				ns.toast("Joined " + invites[h], "success", 10000)

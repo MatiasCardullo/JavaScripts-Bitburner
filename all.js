@@ -5,6 +5,7 @@ import { speak } from "./sounds/voice.js";
 export async function main(ns) {
 	ns.disableLog('ALL')
 	ns.enableLog('exec')
+	//ns.enableLog('sleep')
 	let servers = scanServers();
 	let allServers = servers[0];
 	let serversWithMoney = servers[1];
@@ -36,6 +37,7 @@ export async function main(ns) {
 	ns.exec("monitor.js", "home");
 	ns.tail()
 	let ramServer;
+	let stopMarket = false
 	while (true) {
 		await execSafeScript(ns, "getPlayer.js")
 		let player = JSON.parse(ns.read("/logs/playerStats.txt"))
@@ -47,10 +49,12 @@ export async function main(ns) {
 			ramServer = homeRAM;
 		}
 		//ns.print(serverMaxOut.length, serverMaxOut)
-		if (ns.getServerMoneyAvailable("home") > 25000000000 && !ns.scriptRunning("/stock/market.js", "home")) {
+		if (ns.isRunning("/stock/market.js", "home", true))
+			stopMarket = true
+		if (!stopMarket && ns.getServerMoneyAvailable("home") > 25000000000 && !ns.scriptRunning("/stock/market.js", "home")) {
 			ns.exec("/stock/market.js", "home")
 		}
-		await execSafeScript(ns, "/cct/contractManager.js")
+		await execScript(ns, "/cct/contractManager.js")
 		if (singularity) {
 			if (!ns.serverExists("darkweb") && ns.getServerMoneyAvailable("home") > 200000) {
 				await execScript(ns, "/singularity/buyTor.js")
@@ -68,27 +72,31 @@ export async function main(ns) {
 				if ((doCrime && myServers.length < 25) || (getGang && ns.read("/gang/info.txt") == "")) {
 					let pid = ns.exec("/singularity/crime.js", "home", 1, getGang, false);
 					while (homeRAM < 64 && ns.isRunning(pid)) { await ns.sleep(0) }
-				} else if(!player.inBladeburner){
-					await execScript(ns, "/singularity/company.js")
 				}
 			}
-			if (ns.read("/gang/info.txt") !== "") {
+			if ((!doCrime || (doCrime && myServers.length == 25)) &&
+				(!player.inBladeburner || (player.inBladeburner && ns.read("/logs/installedAugments.txt").includes("The Blade's Simulacrum")))) {
+				await execScript(ns, "/singularity/company.js")
+			}
+			if (ns.read("/gang/info.txt") !== "" && (!doCrime || (doCrime && myServers.length == 25))
+				/*&& ns.getServerMoneyAvailable("home") < parseFloat(ns.read("/logs/minPrice.txt"))*/) {
 				if (player.inBladeburner)
-					await execSafeScript(ns, "/bladeburner/manager.js");
+					ns.exec("/bladeburner/manager.js", "home");
 				else
 					await execScript(ns, "/bladeburner/join.js");
 			}
-			await execSafeScript(ns, "/singularity/joinFactions.js")
-			await execSafeScript(ns, "/singularity/augments.js");
+			await execScript(ns, "/singularity/checkFactionInvitations.js")
+			ns.exec("/singularity/joinFactions.js", "home")
+			ns.exec("/singularity/augments.js", "home");
 			if (setGang) {
-				await execScript(ns, "/singularity/gang.js")
+				ns.exec("/singularity/gang.js", "home")
 			}
 		} else {
 			await execSafeScript(ns, "hacknet.js")
 		}
 		await rootServers(allServers);
 		await maxOutServers(serversWithMoney, serversWithRam, myServers);
-		if (myServers.length < 25) {
+		if (player.bitNodeN != 9 && myServers.length < 25) {
 			await execScript(ns, "buyServer.js", "home", serversWithMoneyWithoutRam.toString(), ramServer);
 		}
 		await execSafeScript(ns, "mail.js");
@@ -281,9 +289,11 @@ export async function main(ns) {
 		if (perc != null) {
 			ram = (maxRam / 100) * perc;
 		} else if (maxRam > 1024) {
+			ram = maxRam - 1024;
+		} else if (maxRam > 128) {
 			ram = maxRam - 128;
 		} else if (maxRam > 64) {
-			ram = maxRam - 64;
+			ram = 16;
 		}
 		if (ns.hasRootAccess(server) && ns.hasRootAccess(hackServer) && ram < maxRam - ns.getServerUsedRam(server)) {
 			let thread = ram / ns.getScriptRam(script);

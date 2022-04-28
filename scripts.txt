@@ -1,6 +1,8 @@
 /augments/getPrice.js
 /augments/getStats.js
 /bladeburner/getActions.js
+/bladeburner/getBlackOpsRanks.js
+/bladeburner/getCity.js
 /bladeburner/getCityChaos.js
 /bladeburner/getCityCommunities.js
 /bladeburner/getCityPopulation.js
@@ -8,6 +10,7 @@
 /bladeburner/getRank.js
 /bladeburner/getRemaining.js
 /bladeburner/getSkillCost.js
+/bladeburner/getSkillLevel.js
 /bladeburner/getSkillPoints.js
 /bladeburner/getStamina.js
 /bladeburner/getSuccessChance.js
@@ -36,6 +39,7 @@
 /exploit/undocumentedFunctionCall.js
 /factions/getFavor.js
 /factions/getRep.js
+/gang/ascendAll.js
 /gang/ascendMember.js
 /gang/getAllAscensionResult.js
 /gang/getAscensionResult.js
@@ -80,6 +84,7 @@
 /singularity/joinFactions.js
 /singularity/nextBitNode.js
 /singularity/purchaseAugmentation.js
+/singularity/stopAction.js
 /singularity/travelToCity.js
 /singularity/upgradeHomeCores.js
 /singularity/upgradeHomeCoresCost.js

@@ -31,14 +31,16 @@ export async function main(ns) {
 			getGang = await ns.prompt("Do you want to form a gang?")
 			setGang = getGang
 		}
-		await runSafeScript(ns, "/gang/getMembersInformation.js")
-		let arrayMembers = ns.read("/gang/membersInfo.txt")
-		try {
-			arrayMembers = JSON.parse(arrayMembers)
-			if (arrayMembers.length == 12)
-				for (let i in arrayMembers)
-					await runSafeScript(ns, "/gang/ascendMember.js", arrayMembers[i].name)
-		} catch { }
+		if (!getGang && setGang) {
+			await runSafeScript(ns, "/gang/getMembersInformation.js")
+			let arrayMembers = ns.read("/gang/membersInfo.txt")
+			try {
+				arrayMembers = JSON.parse(arrayMembers)
+				if (arrayMembers.length == 12)
+					for (let i in arrayMembers)
+						await runSafeScript(ns, "/gang/ascendMember.js", arrayMembers[i].name)
+			} catch { }
+		}
 	} else {
 		doCrime = false;
 		getGang = false;
