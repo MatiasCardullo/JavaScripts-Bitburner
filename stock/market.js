@@ -51,10 +51,8 @@ export async function main(ns) {
                         ns.exit()
                     }
                 }
-                if(itSell){
-                    speak("StockMarket",11)
+                if(itSell)
                     itSell=false
-                }
                 if (empty && onlySell) {
                     ns.exit()
                 }
@@ -107,6 +105,8 @@ export async function main(ns) {
             await runSafeScript(ns, "/stock/getForecast.js", stok)
             let forecast = parseFloat(ns.read("/stock/" + stok + "/forecast.txt"))
             if (forecast < 0.5) {
+                if(!itSell)
+                    speak("StockMarket",11)
                 itSell=true
                 await runScript(ns, "/stock/sell.js", stok, position[0])
                 ns.print('Sold ' + stok + ': ' + position[0])

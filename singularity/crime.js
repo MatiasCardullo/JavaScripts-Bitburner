@@ -13,36 +13,41 @@ export async function main(ns) {
 			money[i] = crimes[i].money / crimes[i].time
 		}
 		if (getGang) {
-			let aux;let index;
+			let aux; let index;
 			for (let i = 0; i < crimes.length; i++) {
 				aux = crimes[i].karma / crimes[i].time
-				if(aux>bestKarma){
-					bestKarma=aux
-					index=i
+				if (aux > bestKarma) {
+					bestKarma = aux
+					index = i
 				}
 			}
-			bestKarma=index
+			bestKarma = index
 		}
+		let info = ""; let info2 = ""
 		do {
 			ns.clearLog()
-			let info = " kills:" + player.numPeopleKilled + " karma:" + parseInt(ns.heart.break())
+			ns.print(crimes[bestKarma].time)
+			info = " kills:" + player.numPeopleKilled + " karma:" + parseInt(ns.heart.break())
+			if (getGang)
+				info2 = " time remaining: " + gangTime(54000 + ns.heart.break(), crimes[bestKarma].karma / crimes[bestKarma].time)
+			ns.run("getPlayer.js")
+			player = JSON.parse(ns.read("/logs/playerStats.txt"))
+			let time = ns.singularity.commitCrime(selectCrime(ns, crimes, money, player, getGang, bestKarma))
 			if (loop) {
 				ns.print(" DONT CLOSE THIS WINDOW\n Use the kill button to stop the script")
-				ns.print(info)
+				ns.print(info + info2)
 			} else {
-				ns.toast(info, 'info')
+				time -= 500
+				ns.toast(info + info2, 'info', 3000)
 			}
-			let time = ns.singularity.commitCrime(selectCrime(ns, crimes, money, getGang, bestKarma))
-			await ns.sleep(time - 500)
+			await ns.sleep(time)
 		} while (loop)
 	}
 
 }
 
 /** @param {NS} ns **/
-export function selectCrime(ns, crimes, money, getGang = false,k) {
-	ns.run("getPlayer.js")
-	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
+export function selectCrime(ns, crimes, money, player, getGang = false, k) {
 	let chance = new Array(crimes.length);
 	let maxChance; let maxMoney; let index;
 	for (let i = 0; i < crimes.length; i++) {
@@ -74,4 +79,16 @@ export function selectCrime(ns, crimes, money, getGang = false,k) {
 		}
 	}
 	return crimes[index].name
+}
+
+export function gangTime(karma, kPerMS) {
+	let time = karma / kPerMS;
+	let s = time / 1000;
+	let m = s / 60;
+	let h = m / 60;
+	if (h > 1)
+		return parseInt(h) + ' hours'
+	if (m > 1)
+		return parseInt(m) + ' minutes'
+	return parseInt(s) + ' seconds'
 }

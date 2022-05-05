@@ -39,8 +39,8 @@ export async function main(ns) {
             await runSafeScript(ns, "/cct/getContractType.js", listFiles[z], serverCct)
             let name = listFiles[z].slice(0, listFiles[z].length - 4).replace('&', 'And')
             //let inputData = ns.codingcontract.getData(listFiles[z], serverCct)
-            let inputData = JSON.parse(ns.read("/cct/" + name + "/data.txt"));
-            let inputType = ns.read("/cct/" + name + "/type.txt");
+            let inputData = JSON.parse(ns.read("/cct/files/" + name + "/data.txt"));
+            let inputType = ns.read("/cct/files/" + name + "/type.txt");
             let outputData = 0;
             let outputResult = null;
             //new Audio("data:audio/wav;base64," + _beep).play()
@@ -103,7 +103,7 @@ export async function main(ns) {
             if (outputResult != "NO SOLVER YET") {
                 outputData = JSON.stringify(outputData)
                 await runSafeScript(ns, "/cct/attempt.js", outputData, listFiles[z], serverCct)
-                outputResult = ns.read("/cct/" + name + "attempt.txt")
+                outputResult = ns.read("/cct/files/" + name + "attempt.txt")
                 new Audio("data:audio/wav;base64," + _beep).play()
             }
             let aux = serverCct + ", " + listFiles[z] + ", " + inputType + ", " + outputData + ", " + outputResult;

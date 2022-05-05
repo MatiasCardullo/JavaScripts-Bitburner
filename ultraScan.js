@@ -63,7 +63,7 @@ export async function main(ns) {
                 terminalInput.value='home; run connect.js ${name}';
                 const handler = Object.keys(terminalInput)[1];
                 terminalInput[handler].onChange({target:terminalInput});
-                terminalInput[handler].onKeyDown({keyCode:13,preventDefault:()=>null});
+                terminalInput[handler].onKeyDown({keyCode:13,key:'Enter',preventDefault:()=>null});
             })();"
         
             style='color:${nameColor}'>${name}</a> `,

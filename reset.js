@@ -7,6 +7,7 @@ export async function main(ns) {
 		.concat(ns.ls("home", "/factions/"))
 		.concat(ns.ls("home", "/stock/"))
 		.concat(ns.ls("home", "/gang/"))
+		.concat(ns.ls("home", "/bladeburner/"))
 		.concat(ns.ls("home", "/logs/"))
 	rmFiles.forEach((f) => f.endsWith(".txt") ? ns.rm(f) : null)
 	var symbolMap = [

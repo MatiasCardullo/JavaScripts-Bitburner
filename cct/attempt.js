@@ -12,5 +12,5 @@ export async function main(ns) {
 		ns.toast(ns.args[1], 'error', 10000)
 		result=false;
 	}
-	await ns.write("/cct/" + name + "/attempt.txt", result, 'w');
+	await ns.write("/cct/files/" + name + "/attempt.txt", result, 'w');
 }

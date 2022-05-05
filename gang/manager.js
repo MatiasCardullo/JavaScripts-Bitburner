@@ -37,8 +37,9 @@ export async function main(ns) {
 					continue;
 				} else {
 					fullEquipment = false;
-					if (equipment[i].cost < ns.getServerMoneyAvailable("home"))
-						await runScript(ns, "/gang/purchaseEquipment.js", members[h].name, equipment[i].name);
+					//ns.toast(getDiscount(infoGang))
+					//if (equipment[i].cost < ns.getServerMoneyAvailable("home"))
+					await runScript(ns, "/gang/purchaseEquipment.js", members[h].name, equipment[i].name);
 				}
 			}
 			if (infoGang.territory < 1 && members.length == 12 && serversBought && fullEquipment) {
@@ -46,7 +47,7 @@ export async function main(ns) {
 					ns.run("/gang/setMemberTask.js", 1, members[h].name, "Territory Warfare")
 			} else {
 				let task;
-				if (infoGang.power > 20000)
+				if (infoGang.power > 20000 || (ns.read("/gang/ascended.txt") == "true"))
 					task = "Human Trafficking"
 				else if (h + 3 < members.length || members.length == 12)
 					task = "Run a Con"
@@ -66,11 +67,12 @@ export async function main(ns) {
 		ns.gang.createGang("Slum Snakes")
 	}
 
-	function getDiscount() {
+	function getDiscount(infoGang) {
 		const respectLinearFac = 5e6;
 		const powerLinearFac = 1e6;
-		const discount =
-			Math.pow(infoGang.respect, 0.01) + infoGang.respect / respectLinearFac + Math.pow(infoGang.power, 0.01) + infoGang.power / powerLinearFac - 1;
+		/*const discount =
+			Math.pow(ns.gang.getGangInformation().respect, 0.01) + ns.gang.getGangInformation().respect / respectLinearFac +
+			Math.pow(ns.gang.getGangInformation().power, 0.01) + ns.gang.getGangInformation().power / powerLinearFac - 1;*/
 		return Math.max(1, discount);
 	}
 }

@@ -39,6 +39,7 @@ export async function main(ns) {
 				if (arrayMembers.length == 12)
 					for (let i in arrayMembers)
 						await runSafeScript(ns, "/gang/ascendMember.js", arrayMembers[i].name)
+				await ns.write("/gang/ascended.txt", "true", 'w')
 			} catch { }
 		}
 	} else {
@@ -50,5 +51,5 @@ export async function main(ns) {
 	audio[1].play();
 	await ns.sleep(3000)
 	ns.tprint('\n' + ns.read("ascii_os.txt"))
-	await runScript(ns, "all.js", singularity, doCrime, getGang, setGang)
+	await runScript(ns, "centralManager.js", singularity, doCrime, getGang, setGang)
 }

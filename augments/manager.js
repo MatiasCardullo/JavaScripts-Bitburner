@@ -5,6 +5,7 @@ export async function main(ns) {
 	//ns.tail()
 	//ns.disableLog('run')
 	ns.disableLog('sleep')
+	let doCrime = ns.args[0]
 	await runScript(ns, "/singularity/getMyAugments.js")
 	let player = JSON.parse(ns.read("/logs/playerStats.txt"))
 	let myServers = ns.read("myServers.txt").split(',').length
@@ -21,15 +22,15 @@ export async function main(ns) {
 	let purchased = ns.read("/logs/purchasedAugments.txt").split(',')
 	var ownAugments = installed.concat(purchased)
 	let bbDecision = !player.inBladeburner || (player.inBladeburner && installed.includes("The Blade's Simulacrum"))
+	let bbDecision2 = !player.inBladeburner || (player.inBladeburner && ownAugments.includes("The Blade's Simulacrum"))
 	if (installed.includes("Neuroreceptor Management Implant"))
 		focus = false
-	let factions = player.factions
 	let getRepComp = false;
 	let companyFactions = ["MegaCorp", "ECorp", "Clarke Incorporated", "Bachman & Associates", "NWO", "KuaiGong International",
 		"Four Sigma", "Blade Industries", "OmniTek Incorporated", "Fulcrum Secret Technologies"]
-	let allFactions = ["CyberSec", "Tian Di Hui", "Chongqing", "New Tokyo", "Ishima", "Sector-12", "Aevum", "Volhaven", "Nitesec", "The Black Hand", "BitRunners",
+	/*let allFactions = ["CyberSec", "Tian Di Hui", "Chongqing", "New Tokyo", "Ishima", "Sector-12", "Aevum", "Volhaven", "Nitesec", "The Black Hand", "BitRunners",
 		"Slum Snakes", "Tetrads", "Silhouette", "Speakers for the Dead", "The Dark Army",
-		"The Syndicate", "The Covenant", "Daedalus", "Illuminati"].concat(companyFactions)
+		"The Syndicate", "The Covenant", "Daedalus", "Illuminati"].concat(companyFactions)*/
 	for (let h = 0; h < companyFactions.length; h++) {
 		if (!bbDecision) {
 			break;
@@ -38,16 +39,16 @@ export async function main(ns) {
 		}
 	}
 	for (let h = 0; h < player.factions.length; h++) {
-		await runScript(ns, "/factions/getRep.js", factions[h]);
-		await runScript(ns, "/factions/getFavor.js", factions[h]);
-		pathFaction = "/factions/" + player.factions[h].replaceAll(' ', '').replace('&', 'And') + "/augments.txt"
+		await runScript(ns, "/factions/getRep.js", player.factions[h]);
+		await runScript(ns, "/factions/getFavor.js", player.factions[h]);
+		pathFaction = "/factions/" + player.factions[h].replaceAll(' ', '').replace(':', '').replace('&', 'And') + "/augments.txt"
 		augments = ns.read(pathFaction)
 		if (augments == "") {
 			await runSafeScript(ns, "/singularity/factionsAugments.js", player.factions[h]);
 		}
 		augments = augments.split(',')
 		for (let i = 0; i < augments.length; i++) {
-			pathAugment = "/augments/" + augments[i].replaceAll(' ', '').replace("'", '').replace("(S.N.A)", "") + ".txt";
+			pathAugment = "/augments/" + augments[i].replaceAll(' ', '').replace("'", '').replace(':', '').replace("(S.N.A)", "") + ".txt";
 			let data = ns.read(pathAugment)
 			if (data == "") {
 				await runSafeScript(ns, "/augments/getStats.js", augments[i])
@@ -65,7 +66,7 @@ export async function main(ns) {
 						comp.push([player.factions[h], augments[i]])
 					} else if (data.includes("faction")) {
 						fact.push([player.factions[h], augments[i]])
-					} else if (data.includes("crime")) {
+					} else if (doCrime && data.includes("crime")) {
 						crime.push([player.factions[h], augments[i]])
 					} else if (data.includes("weak") || data.includes("grow") || (data.includes("hack") && !data.includes("hacknet"))) {
 						hak.push([player.factions[h], augments[i]])
@@ -78,26 +79,30 @@ export async function main(ns) {
 			}
 		}
 	}
-	//ns.tprint(rep.length+" "+crime.length+" "+hak.length)
-	//ns.tprint(other)
-	let aux = comp.concat(fact).concat(hak).concat(crime)//concat(other)
+	let aux = comp.length + fact.length + hak.length + crime.length
 	if (player.inBladeburner) {
-		aux = bb.concat(aux)
-		//ns.print(aux)
+		aux += bb.length
 	}
-	let buyOther = aux.length == 0
-	await buyLoop(aux)
-	if (buyOther) {
+	if (aux == 0) {
 		await buyLoop(other);
+	} else {
+		await buyLoop(bb)
+		if (bbDecision2) {
+			await buyLoop(fact)
+			await buyLoop(hak)
+			await buyLoop(comp)
+			if (doCrime)
+				await buyLoop(crime)
+		}
 	}
 	let install = 0;
 	for (let i = 0; i < purchased.length; i++) {
 		if (special.includes(purchased[i])) {
 			install++;
 		}
-		pathAugment = "/augments/" + purchased[i].replaceAll(' ', '').replace("'", '').replace("(S.N.A)", "") + ".txt";
+		pathAugment = "/augments/" + purchased[i].replaceAll(' ', '').replace("'", '').replace(':', '').replace("(S.N.A)", "") + ".txt";
 		let data = ns.read(pathAugment);
-		if (data.includes("rep") || data.includes("crime") || data.includes("weak") || data.includes("grow") || (data.includes("hack") && !data.includes("hacknet"))) {
+		if (data.includes("bladeburner") || data.includes("rep") || data.includes("crime") || data.includes("weak") || data.includes("grow") || (data.includes("hack") && !data.includes("hacknet"))) {
 			install++;
 		}
 		//ns.tprint(install+' '+count)
@@ -107,8 +112,9 @@ export async function main(ns) {
 	ns.print(install + ' ' + count)
 	if (install >= count || (toBuy.length == 0 && player.factions.includes("Illuminati")) || purchased.includes("The Red Pill") || purchased.includes("The Blade's Simulacrum")) {
 		let pid; let notScript = false;
-		//ns.kill("all.js", "home", true, true, false, true)
-		if (ns.kill("/stock/market.js", "home")) {
+		//ns.kill("centralManager.js", "home", true, true, false, true)
+		if (ns.isRunning("/stock/market.js", "home")) {
+			ns.kill("/stock/market.js", "home")
 			pid = await runScript(ns, "/stock/market.js", true)
 			await ns.write("/stock/_tempStockPid.txt", pid, 'w')
 		} else if (ns.read("/stock/_tempStockPid.txt") == "") {
@@ -121,15 +127,15 @@ export async function main(ns) {
 				pathFaction = "/factions/" + player.factions[h].replaceAll(' ', '').replace('&', 'And') + "/augments.txt"
 				augments = ns.read(pathFaction).split(',')
 				for (let i = 0; i < augments.length; i++) {
-					if (ns.singularity.purchaseAugmentation(player.factions[h], augments[i])) {
-						let output = "Purchased " + augments[i] + " from " + factions[h]
+					if (!augments[i].includes("Hacknet") && augments[i] != "NeuroFlux Governor" && ns.singularity.purchaseAugmentation(player.factions[h], augments[i])) {
+						let output = "Purchased " + augments[i] + " from " + player.factions[h]
 						ns.toast(output, "success", 60000)
 					}
 				}
 			}
 			for (let h = 0; h < player.factions.length; h++)
 				while (ns.singularity.purchaseAugmentation(player.factions[h], "NeuroFlux Governor")) { }
-			ns.run("/singularity/installAugs.js")
+			ns.run("/augments/install.js")
 		}
 	}
 	if (!player.isWorking && player.hacking > 2500 && (player.strength < 1200 || player.defense < 1200 || player.dexterity < 1200 || player.agility < 1200)) {
@@ -167,7 +173,7 @@ export async function main(ns) {
 			let factionRep = parseFloat(ns.read(path + "/reputation.txt"));
 			let factionFavor = parseFloat(ns.read(path + "/favor.txt"));
 			if (factionRep < augRep) {
-				if (myServers == 25 || ns.read("/logs/firstAugment.txt") == array[i][1]) {
+				if (myServers == 25 || (ns.read("/logs/firstAugment.txt") == array[i][1] && ns.read("/gang/info.txt") != "")) {
 					if (factionFavor > favor && augPrice < player.money)
 						await runSafeScript(ns, "/singularity/donateFaction.js", array[i][0], player.money - augPrice * (1 + purchased.length));
 

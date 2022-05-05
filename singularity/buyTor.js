@@ -1,4 +1,6 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-	ns.singularity.purchaseTor()
+	if(ns.singularity.purchaseTor()){
+		ns.toast("Purchased TOR router")
+	}
 }

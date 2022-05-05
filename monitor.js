@@ -233,8 +233,9 @@ export async function main(ns) {
 		let total = 0;
 		let maxLength = 40;
 		let company;
-		let access = [ns.read("/logs/wseAccount.txt"), ns.read("/logs/tixApi.txt"), ns.read("/logs/4SMarketData.txt"), ns.read("/logs/4SMarketDataTixApi.txt")].toString()
-		if (access === "true,true,true,true") {
+		let p = JSON.parse(ns.read("/logs/playerStats.txt"))
+		let access = [p.hasWseAccount, p.hasTixApiAccess, p.has4SData, p.has4SDataTixApi]
+		if (access.toString() === "true,true,true,true") {
 			let data = [["Company Name and symbol", "Price", "Volatility", "Forecast", "Max Shares", "My Shares", "Invested"]];
 			for (let i = 0; i < symbols.length; i++) {
 				company = ns.read("/stock/" + symbols[i] + "/name.txt").split(',')[0].padEnd(maxLength + 5 - symbols[i].length, '-') + symbols[i]
@@ -319,6 +320,12 @@ export async function main(ns) {
 				}
 			}
 			for (let i in output) {
+				for (let j in output) {
+					if(output[i][0]==output[j][0]&&i!=j){
+						output.splice(j,1)
+						j--
+					}
+				}
 				output[i][1] = ns.nFormat(output[i][1], '0.0a')
 				output[i][2] = ns.nFormat(output[i][2], '0.0a')
 				let aux = [];
