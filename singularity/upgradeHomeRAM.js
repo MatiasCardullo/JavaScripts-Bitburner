@@ -1,4 +1,5 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-	ns.singularity.upgradeHomeRam();
+	if (ns.singularity.upgradeHomeRam())
+		ns.toast("Home RAM upgraded", "success", 30000)
 }

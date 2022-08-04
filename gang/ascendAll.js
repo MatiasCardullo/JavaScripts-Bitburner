@@ -5,7 +5,9 @@ export async function main(ns) {
 	let arrayMembers = ns.read("/gang/membersInfo.txt")
 	try {
 		arrayMembers = JSON.parse(arrayMembers)
-		for (let i in arrayMembers)
-			await runScript(ns, "/gang/ascendMember.js", arrayMembers[i].name)
+		for (let i in arrayMembers){
+			await runSafeScript(ns, "/gang/ascendMember.js", arrayMembers[i].name)
+			await ns.sleep(10000)
+		}
 	} catch { }
 }

@@ -8,6 +8,7 @@ export async function main(ns) {
 	let money = ns.getServerMoneyAvailable(server);
 	let aux = 0; var numM = 0; //var numS = 0;
 	while ((money / maxM * 100) < 90) {
+		ns.print(new Date().toString())
 		await ns.grow(server);
 		await ns.sleep(1000)
 		money = ns.getServerMoneyAvailable(server);
@@ -17,5 +18,6 @@ export async function main(ns) {
 			ns.print(numM + "% grow");
 		}
 	}
+	ns.print(new Date().toString())
 	await ns.weaken(server)
 }

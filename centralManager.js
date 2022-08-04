@@ -6,7 +6,10 @@ export async function main(ns) {
 	ns.disableLog('ALL')
 	ns.enableLog('exec')
 	//ns.enableLog('sleep')
-	let augs = ns.read("/logs/installedAugments.txt")
+	let augs; let goStanek; let gInfo;
+	let hacknetN; let sleeves;
+	let bnData = JSON.parse(ns.read("/logs/bitnodeMultipliers.txt"))
+	let maxMyServers = Math.ceil(25 * bnData.PurchasedServerLimit)
 	let servers = scanServers();
 	let allServers = servers[0];
 	let serversWithMoney = servers[1];
@@ -34,14 +37,21 @@ export async function main(ns) {
 		{ price: 250, name: 'SQLInject.exe', level: minPorts[5] }
 	];
 
-	await ns.sleep(10000)
 	ns.exec("monitor.js", "home");
+	await ns.sleep(5000)
 	ns.tail()
-	let ramServer;
+	let ramServer; let player;
 	let stopMarket = false
+	let alertBonusGang = 0
+	let alertBonusBB = 0
+	await execSafeScript(ns, "getPlayer.js")
 	while (true) {
-		await execSafeScript(ns, "getPlayer.js")
-		let player = JSON.parse(ns.read("/logs/playerStats.txt"))
+		gInfo = ns.read("/gang/info.txt")
+		augs = ns.read("/augments/installed.txt")
+		goStanek = "/augments/stanek/activeFragments.txt" != "" && augs != "" && !augs.includes("Stanek's Gift - Serenity")
+		hacknetN = ns.read("/hacknet/count.txt")
+		sleeves = ns.read("/sleeves/count.txt")
+		player = JSON.parse(ns.read("/logs/playerStats.txt"))
 		let myServers = ns.read("myServers.txt").split(',')
 		homeRAM = ns.getServerMaxRam("home")
 		if (homeRAM > 1024) {
@@ -50,37 +60,51 @@ export async function main(ns) {
 			ramServer = homeRAM;
 		}
 		//ns.print(serverMaxOut.length, serverMaxOut)
-		if (ns.isRunning("/stock/market.js", "home", true))
+		/*if (player.currentWorkFactionDescription == "carrying out hacking contracts" && !ns.scriptRunning("share.js", "home")) {
+			let pid;
+			do {
+				await ns.sleep(0)
+				pid = ns.exec("share.js", "home", homeRAM / 4 / 4)
+			} while (pid == 0)
+		}*/
+		if (ns.isRunning("/stock/market.js", "home", true, "", "", ""))
 			stopMarket = true
-		if (!stopMarket && ns.getServerMoneyAvailable("home") > 25000000000 && !ns.scriptRunning("/stock/market.js", "home")) {
+		if (!stopMarket && !ns.scriptRunning("/stock/market.js", "home") && player.bitNodeN != 12 && (ns.getServerMoneyAvailable("home") > 25000000000 * bnData.FourSigmaMarketDataApiCost ||
+			(player.hasWseAccount && player.hasTixApiAccess && player.has4SData && player.has4SDataTixApi))) {
 			ns.exec("/stock/market.js", "home")
 		}
-		await execScript(ns, "/cct/manager.js")
+		if (maxMyServers > 0 && myServers.length !== maxMyServers)
+			await execSafeScript(ns, "buyServer.js", "home", serversWithMoneyWithoutRam.toString(), ramServer);
+		await execSafeScript(ns, "/cct/manager.js")
+		await execSafeScript(ns, "/hacknet/manager.js", "home", goStanek)
 		if (singularity) {
-			if (!ns.serverExists("darkweb") && ns.getServerMoneyAvailable("home") > 200000) {
-				await execScript(ns, "/singularity/buyTor.js")
+			if (!player.tor && ns.getServerMoneyAvailable("home") > 200000) {
+				await execSafeScript(ns, "/singularity/buyTor.js")
 			}
 			if (ns.read("/logs/coreCost.txt") < ns.getServerMoneyAvailable("home")) {
 				await execSafeScript(ns, "/singularity/upgradeHomeCores.js")
-				await execScript(ns, "/singularity/upgradeHomeCoresCost.js");
+				await execSafeScript(ns, "/singularity/upgradeHomeCoresCost.js");
 			}
-			if (ns.read("/logs/RAMCost.txt") < ns.getServerMoneyAvailable("home")) {
+			if (ns.read("/logs/RAMCost.txt") < ns.getServerMoneyAvailable("home") && (4096 > homeRAM || ns.read("activeFragments.txt") != "")) {
 				await execSafeScript(ns, "/singularity/upgradeHomeRAM.js");
-				await execScript(ns, "/singularity/upgradeHomeRAMCost.js");
+				await execSafeScript(ns, "/singularity/upgradeHomeRAMCost.js");
 			}
-			if ((doCrime && myServers.length < 25) || (getGang && ns.read("/gang/info.txt") == "") && !ns.scriptRunning("/singularity/crime.js", "home")) {
-				let pid = await execScript(ns, "/singularity/crime.js", "home", getGang, false);
-				while (homeRAM < 64 && ns.isRunning(pid)) { await ns.sleep(0) }
+			if (sleeves == "") {
+				if ((doCrime && myServers.length < maxMyServers) || (getGang && gInfo == "") && !ns.scriptRunning("/singularity/crime.js", "home")) {
+					let pid = await execScript(ns, "/singularity/crime.js", "home", getGang, false);
+					while (homeRAM < 64 && ns.isRunning(pid)) { await ns.sleep(0) }
+				}
+				if ((!doCrime || (doCrime && myServers.length == maxMyServers)) &&
+					(!player.inBladeburner || augs.includes("The Blade's Simulacrum"))) {
+					await execSafeScript(ns, "/singularity/company.js")
+				}
 			}
-			if ((!doCrime || (doCrime && myServers.length == 25)) &&
-				(!player.inBladeburner || (player.inBladeburner && augs.includes("The Blade's Simulacrum")))) {
-				await execSafeScript(ns, "/singularity/company.js")
-			}
-			if ((!getGang || (getGang && ns.read("/gang/info.txt") !== "")) && (!doCrime || (doCrime && myServers.length == 25))
-				/*&& ns.getServerMoneyAvailable("home") < parseFloat(ns.read("/logs/minPrice.txt"))*/) {
+			if (ns.read("/sleeves/count.txt") != "" || ((!getGang || gInfo !== "") && (!doCrime || myServers.length == parseInt(maxMyServers)))
+				/*&& ns.getServerMoneyAvailable("home") < parseFloat(ns.read("/augments/minPrice.txt"))*/) {
 				if (player.inBladeburner) {
-					if (!ns.scriptRunning("/bladeburner/manager.js", "home"))
-						await execScript(ns, "/bladeburner/manager.js");
+					if (augs.includes("The Blade's Simulacrum") || !player.isWorking)
+						if (!ns.scriptRunning("/bladeburner/manager.js", "home"))
+							await execScript(ns, "/bladeburner/manager.js", "home");
 				} else {
 					if (player.strength < 100 || player.defense < 100 || player.dexterity < 100 || player.agility < 100) {
 						if (!ns.scriptRunning("/singularity/crime.js", "home")) {
@@ -88,30 +112,59 @@ export async function main(ns) {
 							while (homeRAM < 64 && ns.isRunning(pid)) { await ns.sleep(0) }
 						}
 					} else if (!ns.scriptRunning("/bladeburner/join.js", "home"))
-						await execScript(ns, "/bladeburner/join.js");
+						await execSafeScript(ns, "/bladeburner/join.js");
 				}
 			}
+			let list = ns.read("/factions/invitations.txt")
 			await execSafeScript(ns, "/factions/checkInvitations.js")
-			await execSafeScript(ns, "/factions/join.js")
-			if (!ns.scriptRunning("/augments/manager.js", "home"))
-				await execScript(ns, "/augments/manager.js", "home", doCrime);
-			if (-54000 > ns.heart.break() && setGang && !ns.scriptRunning("/gang/manager.js", "home")) {
+			if (list != ns.read("/factions/invitations.txt"))
+				await execSafeScript(ns, "/factions/join.js")
+			if (homeRAM < 64) {
+				await execSafeScript(ns, "/augments/manager.js", "home", doCrime);
+				await execSafeScript(ns, "/sleeves/manager.js");
+			} else {
+				if (!ns.scriptRunning("/augments/manager.js", "home"))
+					await execScript(ns, "/augments/manager.js", "home", doCrime);
+				if (!ns.scriptRunning("/sleeves/manager.js", "home"))
+					await execScript(ns, "/sleeves/manager.js");
+			}
+			if (-54000 > ns.heart.break() && setGang && !ns.scriptRunning("/gang/manager.js", "home"))
 				await execScript(ns, "/gang/manager.js")
+			if (augs.includes("The Red Pill") || ns.read("/bladeburner/doneBlackOps.txt").includes("Operation Daedalus"))
+				await execScript(ns, "/singularity/destroyW0r1dD43m0n.js", "home", 12, "jumper.js")
+			if (goStanek && hacknetN != "") {
+				hacknetN = parseInt(hacknetN)
+				for (let i = 0; i < hacknetN; i++) {
+					let server = "hacknet-node-" + i
+					if (ns.serverExists(server) && ns.getServerMaxRam(server) > 16) {
+						await ns.scp("/augments/stanek/chargeFragment.js", server)
+						await ns.scp("/augments/stanek/activeFragments.txt", server)
+						await ns.scp("/augments/stanek/manager2.js", server)
+						if (!ns.isRunning("/augments/stanek/manager2.js", server, server, "", "", ""))
+							await execScript(ns, "/augments/stanek/manager2.js", server, server)
+					}
+				}
 			}
-			if (augs.includes("The Red Pill")) {
-				await execScript(ns, "/singularity/destroyW0r1dD43m0n.js")
+			if (player.factions.includes("Church of the Machine God") && !ns.scriptRunning("/augments/stanek/manager.js", "home"))
+				await execScript(ns, "/augments/stanek/manager.js")
+			if (alertBonusGang == 0 && gInfo !== "" && ns.gang.getBonusTime() < 1000)
+				alertBonusGang = 1
+			if (alertBonusBB == 0 && player.inBladeburner && ns.bladeburner.getBonusTime() < 1000)
+				alertBonusBB = 1
+			/*if (ns.gang.getBonusTime() < 1000 && ns.bladeburner.getBonusTime() < 1000)
+				eval("window.open('cc:=C:\\Users\\Nexxus\\Desktop\\GitHub\\Bitburner\\JavaScripts-Bitburner\\closeBitburner.bat');")*/
+			if (alertBonusGang == 1) {
+				alertBonusGang = 2
+				ns.toast("Gang: bonus time over", "success", null)
 			}
-		} else {
-			await execSafeScript(ns, "hacknet.js")
+			if (alertBonusBB == 1) {
+				alertBonusBB = 2
+				ns.toast("Bladeburner: bonus time over", "success", null)
+			}
 		}
 		await rootServers(allServers);
 		await maxOutServers(serversWithMoney, serversWithRam, myServers);
-		if (player.bitNodeN != 9 && myServers.length < 25 && ((player.bitNodeN != 6 && player.bitNodeN != 7) ||
-			((player.bitNodeN == 6 || player.bitNodeN == 7) && augs.includes("The Blade's Simulacrum")))) {
-			await execSafeScript(ns, "buyServer.js", "home", serversWithMoneyWithoutRam.toString(), ramServer);
-		}
 		await execSafeScript(ns, "mail.js");
-		await ns.sleep(0)
 	}
 
 	function scanServers() {
@@ -140,7 +193,7 @@ export async function main(ns) {
 		for (let i = 0; i < servers.length; i++) {
 			if (ns.getServerMaxMoney(servers[i]) > 0)
 				serversWithMoney.push(servers[i]);
-			if (ns.getServerMaxRam(servers[i]) > 0)
+			if (ns.getServerMaxRam(servers[i]) > 0 && !servers[i].includes("hacknet"))
 				serversWithRam.push(servers[i]);
 		}
 		for (let i = 1; i < serversWithMoney.length; i++) {
@@ -197,7 +250,7 @@ export async function main(ns) {
 				if (ns.getServerNumPortsRequired(server) <= port && ns.getServerRequiredHackingLevel(server) <= ns.getHackingLevel()) {
 					ns.nuke(server);
 				}
-			} else if (ns.getServerRequiredHackingLevel(server) <= ns.getHackingLevel() && !bServers.includes(server) && facServers.includes(server))
+			} else if (ns.getServerRequiredHackingLevel(server) <= ns.getHackingLevel() && !bServers.includes(server)/* && facServers.includes(server)*/)
 				if (await backdoor(server)) {
 					let output = "";
 					if (bServers != "")
@@ -221,7 +274,7 @@ export async function main(ns) {
 		for (let i = 1; i < serversWithMoney.length; i++) {
 			server = serversWithMoney[i];
 			await ns.sleep(0)
-			if (!serverMaxOut.includes(server) || serverMaxOut.length == serversWithMoney.length) {
+			if (!serverMaxOut.includes(server)) {
 				let maxM = ns.getServerMaxMoney(server);
 				let minL = ns.getServerMinSecurityLevel(server);
 				let money = ns.getServerMoneyAvailable(server);
@@ -260,8 +313,17 @@ export async function main(ns) {
 						serverMaxOut.push(server); continue;
 					}
 				} else {
+					let doIt = false
+					let ramServer
 					if (ns.serverExists(server + "_hack")) {
-						if (!ns.scriptRunning(script, server + "_hack")) {
+						ramServer = server + "_hack"
+						doIt = true
+					} else if (ns.serverExists("hacknet-node-" + noRam)) {
+						ramServer = "hacknet-node-" + noRam
+						doIt = true
+					}
+					if (doIt) {
+						if (!ns.scriptRunning(script, ramServer)) {
 							if (percM < 90 || percL < 90) {
 								for (let j = 0; j < serversWithRam.length; j++) {
 									if (!ns.scriptRunning(script, serversWithRam[j])) {
@@ -280,9 +342,9 @@ export async function main(ns) {
 									break;
 								}
 							} else {
-								if (!ns.scriptRunning(script, server + "_hack"))
-									ns.killall(server + "_hack")
-								await hackServer(script, server + "_hack", server, maxM, minL, 99.9999);
+								if (!ns.scriptRunning(script, ramServer))
+									ns.killall(ramServer)
+								await hackServer(script, ramServer, server, maxM, minL, 99.9999);
 							}
 						} else {
 							serverMaxOut.push(server); continue;
@@ -294,23 +356,37 @@ export async function main(ns) {
 	}
 
 	async function hackServer(script, server, hackServer, maxM, minL, perc = null) {
+		if (!ns.hasRootAccess(server))
+			return;
 		let ram = 4;
 		let maxRam = ns.getServerMaxRam(server)
 		if (perc != null) {
 			ram = (maxRam / 100) * perc;
-		} else if (maxRam > 1024) {
-			ram = maxRam - 1024;
-		} else if (maxRam > 128) {
-			ram = maxRam - 128;
-		} else if (maxRam > 64) {
-			ram = 16;
+		} else {
+			maxRam = Math.min(4096, maxRam)
+			if (maxRam > 1024) {
+				ram = 1024;
+			} else if (maxRam > 128) {
+				ram = maxRam - 96;
+			} else if (maxRam > 64) {
+				ram = 16;
+			}
 		}
-		if (ns.hasRootAccess(server) && ns.hasRootAccess(hackServer) && ram < maxRam - ns.getServerUsedRam(server)) {
-			let thread = ram / ns.getScriptRam(script);
-			await ns.scp(script, server)
+		await ns.scp(script, server);
+		let percM = parseInt(ns.getServerMoneyAvailable(hackServer) / maxM * 100);
+		let percL = parseInt(minL / ns.getServerSecurityLevel(hackServer) * 100);
+		let thread = ram / ns.getScriptRam(script);
+		if (goStanek && maxRam > 16 && server.includes("_hack") && !ns.scriptRunning("base.js", server) && percM < 100 && percL < 100) {
+			if (ns.getServerUsedRam(server) < ns.getServerMaxRam(server)) {
+				await ns.scp("/augments/stanek/chargeFragment.js", server)
+				await ns.scp("/augments/stanek/activeFragments.txt", server)
+				await ns.scp("/augments/stanek/manager2.js", server)
+				if (!ns.isRunning("/augments/stanek/manager2.js", server, server, "", "", ""))
+					await execScript(ns, "/augments/stanek/manager2.js", server, server)
+			}
+		}
+		else if (ns.hasRootAccess(hackServer) && ram < maxRam - ns.getServerUsedRam(server)) {
 			if (script == "base2.js" && server != "home") {
-				let percM = parseInt(ns.getServerMoneyAvailable(hackServer) / maxM * 100);
-				let percL = parseInt(minL / ns.getServerSecurityLevel(hackServer) * 100);
 				if (percM < 90 || percL < 90) {
 					for (let j = 0; j < thread / 4; j++) {
 						if (!ns.scriptRunning("base-" + j + ".js", server, maxM)) {
@@ -323,14 +399,20 @@ export async function main(ns) {
 				}
 				else
 					return true;
-			}
-			else {
+			} else {
 				if (script == "base.js") {
 					let text = "Running Hack Script in " + server
 					speak(text, 11)
 					ns.toast(text)
 				}
-				ns.exec(script, server, thread, hackServer, maxM, minL, thread);
+				do {
+					ns.kill("/augments/stanek/manager2.js", server, server, "", "", "")
+				} while (ns.scriptRunning("/augments/stanek/manager2.js", server))
+				let pid;
+				do {
+					pid = ns.exec(script, server, thread, hackServer, maxM, minL, thread);
+					await ns.sleep(0)
+				} while (pid == 0)
 			}
 		}
 		return false;

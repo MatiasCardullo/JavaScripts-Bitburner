@@ -1,5 +1,5 @@
 /** @param {NS} ns */
 export async function main(ns) {
-	ns.bladeburner.joinBladeburnerDivision()
-	
+	if (ns.bladeburner.joinBladeburnerDivision())
+		ns.toast("Joined Bladeburner Division")
 }

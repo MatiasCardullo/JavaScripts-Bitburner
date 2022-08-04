@@ -98,6 +98,7 @@ export async function main(ns) {
                     break;
                 default:
                     outputData = ""; outputResult = "NO SOLVER YET";
+                    await runSafeScript(ns, "/cct/getDescription.js", listFiles[z], serverCct)
                     break;
             }
             if (outputResult != "NO SOLVER YET") {
@@ -107,7 +108,7 @@ export async function main(ns) {
                 new Audio("data:audio/wav;base64," + _beep).play()
             }
             let aux = serverCct + ", " + listFiles[z] + ", " + inputType + ", " + outputData + ", " + outputResult;
-            if(!log.includes(aux))
+            if (!log.includes(aux))
                 await ns.write("/cct/autoContract_log.txt", aux + "\n", 'a');
             if (outputResult == "false") {
                 await ns.write("/cct/autoContract_log.txt", "Failed data for debug: " + inputData + "\n", 'a');

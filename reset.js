@@ -1,15 +1,19 @@
-import { runScript } from "./lib/basicLib.js";
+import { runSafeScript } from "./lib/basicLib.js";
 
 /** @param {NS} ns **/
 export async function main(ns) {
+	let ignore = ["/logs/bitnodeMultipliers.txt", "/logs/bladeburner.txt", "/bladeburner/doneBlackOps.txt", "/augments/stanek/activeFragments.txt"]
 	let rmFiles = ns.ls("home", "/singularity/")
 		.concat(ns.ls("home", "/augments/"))
 		.concat(ns.ls("home", "/factions/"))
 		.concat(ns.ls("home", "/stock/"))
 		.concat(ns.ls("home", "/gang/"))
 		.concat(ns.ls("home", "/bladeburner/"))
+		.concat(ns.ls("home", "/sleeves/"))
+		.concat(ns.ls("home", "/hacknet/"))
 		.concat(ns.ls("home", "/logs/"))
-	rmFiles.forEach((f) => f.endsWith(".txt") ? ns.rm(f) : null)
+	rmFiles.forEach((f) => f.endsWith(".txt") && !ignore.includes(f) ? ns.rm(f) : null)
+	ns.rm("/augments/grafting.txt")
 	var symbolMap = [
 		["AERO", "AeroCorp", "aerocorp"],
 		["APHE", "Alpha Enterprises", "alpha-ent"],
@@ -48,6 +52,11 @@ export async function main(ns) {
 	for (let i = 0; i < symbolMap.length; i++) {
 		await ns.write("/stock/" + symbolMap[i].shift() + "/name.txt", symbolMap[i], 'w')
 	}
-	await runScript(ns, "/stock/getSymbols.js")
-	await runScript(ns, "/singularity/getCrimeStats.js")
+	await runSafeScript(ns, "/stock/getSymbols.js")
+	await runSafeScript(ns, "/sleeves/getNum.js")
+	await runSafeScript(ns, "/singularity/getCrimeStats.js")
+	await runSafeScript(ns, "/augments/namesAndInfo.js")
+	await runSafeScript(ns, "/augments/getGraftables.js")
+	await runSafeScript(ns, "/augments/getGraftPrice.js")
+	await runSafeScript(ns, "/augments/getGraftTime.js")
 }

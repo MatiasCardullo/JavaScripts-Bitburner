@@ -3,9 +3,9 @@ export async function main(ns) {
 	let scaner = true;
 	let singularity = true;
 	let doCrime = false;
-	let getGang; let setGang;
+	let getGang = false; let setGang = false
 	try {
-		getGang = !ns.gang.inGang()
+		getGang = !ns.gang.inGang();
 		setGang = true;
 	} catch {
 		getGang = false;

@@ -18,11 +18,13 @@ export async function main(ns) {
 		await ns.write(server + "_log.txt", money + '-' + new Date().getTime(), "w")*/
 	while (true) {
 		if (money < maxM) {
+			ns.print( new Date().toString())
 			await ns.grow(server);
 			money = ns.getServerMoneyAvailable(server);
 			//await ns.write(server + "_log.txt", money + '-' + new Date().getTime(), "a")
 			auxM = parseFloat(money / maxM * 100).toFixed(2);
 		} else if (level > minS) {
+			ns.print( new Date().toString())
 			await ns.weaken(server);
 			level = ns.getServerSecurityLevel(server);
 			auxS = parseFloat(minS / level * 100).toFixed(2);

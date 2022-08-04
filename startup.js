@@ -9,6 +9,7 @@ export async function main(ns) {
 	let doCrime = ns.args[2]
 	let getGang = ns.args[3]
 	let setGang = ns.args[4]
+	let gang = ns.read("/gang/info.txt")
 	let audio = [
 		new Audio("data:audio/wav;base64," + _beep),
 		new Audio("data:audio/wav;base64," + _coplandOsEnterprise),
@@ -31,17 +32,16 @@ export async function main(ns) {
 			getGang = await ns.prompt("Do you want to form a gang?")
 			setGang = getGang
 		}
-		if (!getGang && setGang) {
+		/*if (!getGang && setGang) {
 			await runSafeScript(ns, "/gang/getMembersInformation.js")
 			let arrayMembers = ns.read("/gang/membersInfo.txt")
 			try {
 				arrayMembers = JSON.parse(arrayMembers)
-				if (arrayMembers.length == 12)
+				if (arrayMembers.length == 12 && JSON.parse(gang).territoryClashChance == 0)
 					for (let i in arrayMembers)
 						await runSafeScript(ns, "/gang/ascendMember.js", arrayMembers[i].name)
-				await ns.write("/gang/ascended.txt", "true", 'w')
 			} catch { }
-		}
+		}*/
 	} else {
 		doCrime = false;
 		getGang = false;

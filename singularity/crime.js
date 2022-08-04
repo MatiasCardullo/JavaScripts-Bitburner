@@ -32,13 +32,12 @@ export async function main(ns) {
 				info2 = " time remaining: " + gangTime(54000 + ns.heart.break(), crimes[bestKarma].karma / crimes[bestKarma].time)
 			ns.run("getPlayer.js")
 			player = JSON.parse(ns.read("/logs/playerStats.txt"))
-			let time = ns.singularity.commitCrime(selectCrime(ns, crimes, money, player, getGang, bestKarma))
+			let time = ns.singularity.commitCrime(selectCrime(ns, crimes, player, getGang))
 			if (loop) {
 				ns.print(" DONT CLOSE THIS WINDOW\n Use the kill button to stop the script")
 				ns.print(info + info2)
 			} else {
 				time -= 500
-				ns.toast(info + info2, 'info', 3000)
 			}
 			await ns.sleep(time)
 		} while (loop)
@@ -46,10 +45,9 @@ export async function main(ns) {
 
 }
 
-/** @param {NS} ns **/
-export function selectCrime(ns, crimes, money, player, getGang = false, k) {
+export function selectCrime(ns, crimes, player, getGang = false, bestChance = 0.9) {
 	let chance = new Array(crimes.length);
-	let maxChance; let maxMoney; let index;
+	let maxChance; let maxMoney; let index; let bestKarma;
 	for (let i = 0; i < crimes.length; i++) {
 		chance[i] = (crimes[i].hacking_success_weight * player.hacking +
 			crimes[i].strength_success_weight * player.strength +
@@ -61,16 +59,27 @@ export function selectCrime(ns, crimes, money, player, getGang = false, k) {
 			player.crime_success_mult * (1 + Math.pow(player.intelligence, 0.8) / 600);
 		//ns.print(chance[i])
 	}
-	if (chance[k] > 0.90) {
+	if (getGang) {
+		let aux;
+		for (let i = 0; i < crimes.length; i++) {
+			aux = crimes[i].karma / crimes[i].time
+			if (aux > bestKarma) {
+				bestKarma = aux
+				index = i
+			}
+		}
+		bestKarma = index
+	}
+	if (chance[bestKarma] > bestChance) {
 		if (getGang && (-54000 < ns.heart.break() || player.numPeopleKilled < 30))
-			return crimes[k].name
+			return crimes[bestKarma].name
 	}
 	maxChance = 0; maxMoney = 0;
 	for (let i = crimes.length - 1; i > -1; i--) {
-		if (chance[i] > 0.90) {
-			if (money[i] > maxMoney) {
+		if (chance[i] > bestChance) {
+			if (crimes[i].money / crimes[i].time > maxMoney) {
 				maxChance = chance[i];
-				maxMoney = money[i];
+				maxMoney = crimes[i].money / crimes[i].time;
 				index = i;
 			}
 		} else if (chance[i] > maxChance) {

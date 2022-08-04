@@ -1,13 +1,25 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-	let aux;
-	let array=[];
-	let printed="";
+	let list;
+	let dir = [];
+	let printed = "";
 	switch (ns.args[0]) {
 		case "home":
-			aux=ns.ls("home",ns.args[1])
-			printed=aux.toString().replaceAll(',','\n')
-			aux.forEach((e)=>e=e.split('/'))
+			list = ns.ls("home", ns.args[1])
+			list.forEach(function (e) {
+				let prin=false
+				let aux = e.split('/')
+				if (aux.length > 2)
+					aux.forEach(function (e) {
+						if(e != ""){
+							if(!dir.includes(e)){
+								//print
+								dir.push(e)
+							}
+						}
+					})
+				printed += '\n' + e//aux.toString()
+			})
 			break;
 	}
 	ns.tprint(printed)

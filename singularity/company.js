@@ -22,18 +22,19 @@ export async function main(ns) {
 				maxRep = 250000
 				faction = "Fulcrum Secret Technologies"
 			}
-			companyRep = ns.singularity.getCompanyRep(companies[i])
+			await runSafeScript(ns, "/company/getRep.js", companies[i])
+			companyRep = parseFloat(ns.read("/company/" + companies[i].replaceAll(' ', '').replace('&', 'And') + "/reputation.txt"))
 			if (companyRep < maxRep && !player.factions.includes(faction)) {
 				allCompanies = false
 				if (player.isWorking && player.location == companies[i]) {
 					if (player.workRepGained / 2 + companyRep >= maxRep) {
-						ns.singularity.stopAction()
+						await runSafeScript(ns, "/singularity/stopAction.js")
 					}
 					break;
 				} else {
-					focus = !ns.read("/logs/installedAugments.txt").includes("Neuroreceptor Management Implant")
-					await runSafeScript(ns, "/singularity/applyCompany.js", companies[i], "software")
-					await runSafeScript(ns, "/singularity/workCompany.js", companies[i], focus)
+					focus = !ns.read("/augments/installed.txt").includes("Neuroreceptor Management Implant")
+					await runSafeScript(ns, "/company/apply.js", companies[i], "software")
+					await runSafeScript(ns, "/company/work.js", companies[i], focus)
 					await ns.write("/logs/company.txt", companies[i], 'w')
 					break;
 				}

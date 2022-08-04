@@ -12,11 +12,10 @@ export async function main(ns) {
     let access = [false, false, false, false];
     var minSharePer = 5
     let onlySell = ns.args[0]
-    let itSell=false
+    let itSell = false
     ns.disableLog('sleep');
     ns.disableLog('run');
     ns.disableLog('getServerMoneyAvailable');
-    await ns.sleep(15000)
     while (true) {
         await runSafeScript(ns, "getPlayer.js")
         p = JSON.parse(ns.read("/logs/playerStats.txt"))
@@ -27,8 +26,8 @@ export async function main(ns) {
         access = [p.hasWseAccount, p.hasTixApiAccess, p.has4SData, p.has4SDataTixApi]
         //ns.tprint(access)
         if (access.toString() == "true,true,true,true") {
-            moneyMin = 500000000
-            moneyMax = parseFloat(ns.read("/logs/minPrice.txt")) + moneyMin
+            moneyMin = parseFloat(ns.read("/augments/minPrice.txt"))
+            moneyMax = moneyMin * (1 + ns.read("/augments/purchased.txt").split(',').length)
             let empty = true;
             let stocks = ns.read("/stock/symbols.txt").split(',')
             if (ns.read("/stock/symbols.txt") == "") {
@@ -51,8 +50,8 @@ export async function main(ns) {
                         ns.exit()
                     }
                 }
-                if(itSell)
-                    itSell=false
+                if (itSell)
+                    itSell = false
                 if (empty && onlySell) {
                     ns.exit()
                 }
@@ -105,9 +104,9 @@ export async function main(ns) {
             await runSafeScript(ns, "/stock/getForecast.js", stok)
             let forecast = parseFloat(ns.read("/stock/" + stok + "/forecast.txt"))
             if (forecast < 0.5) {
-                if(!itSell)
-                    speak("StockMarket",11)
-                itSell=true
+                if (!itSell)
+                    speak("StockMarket", 11)
+                itSell = true
                 await runScript(ns, "/stock/sell.js", stok, position[0])
                 ns.print('Sold ' + stok + ': ' + position[0])
                 await runScript(ns, "/stock/sell.js", stok, position[2])
